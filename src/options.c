@@ -1,3 +1,4 @@
+#include <iscygtty.c>
 #include <errno.h>
 #include <limits.h>
 #include <stdarg.h>
@@ -336,7 +337,7 @@ void parse_options(int argc, char **argv, char **base_paths[], char **paths[]) {
 
     rv = fstat(fileno(stdin), &statbuf);
     if (rv == 0) {
-        if (S_ISFIFO(statbuf.st_mode) || S_ISREG(statbuf.st_mode)) {
+        if ((S_ISFIFO(statbuf.st_mode) || S_ISREG(statbuf.st_mode)) && !iscygtty(STDIN_FILENO)) {
             opts.search_stream = 1;
         }
     }

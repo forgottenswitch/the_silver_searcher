@@ -26,7 +26,7 @@ all : $(TARGET)
 
 # depend on configure.ac to account for version changes
 $(TARGET) : $(OBJS) configure.ac
-	$(CC) -o $@ $(OBJS) $(LIBS)
+	$(CC) -o $@ $(OBJS) $(LIBS) -lntdll
 
 .c.o :
 	$(CC) -c $(CFLAGS) -Isrc $< -o $@
