@@ -85,12 +85,13 @@ typedef struct {
 typedef struct {
     int binary; /* 0 when searching stdin */
     char *dir_full_path; /* NULL when searching stdin */
+    size_t line_number; /* for stdin */
 
-    /* Used for file searches.
-     * */
     linres_t all;
 
     /* Used for stdin search.
+     * Converted from .all by push_line_from_buf_in_results.
+     * See also for_linres_in_results.
      * */
     linres_t *linress;
     size_t linress_n;

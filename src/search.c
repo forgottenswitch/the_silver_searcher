@@ -71,6 +71,27 @@ static void fini_results(results_t *self) {
     memset(self, 0, sizeof(results_t));
 }
 
+typedef void linres_t_func(linres_t *x, void *data);
+
+/* This function iterates from oldest to newest in the results_t->linress ring.
+ * The data arg is passed to fn.
+ * */
+static void for_linres_in_results(results_t *self, size_t start_idx,
+        linres_t_func *fn, void *data) {
+    size_t linress_n = self->linress_n;
+    size_t linress_i = self->linress_i;
+    size_t i = linress_i + start_idx;
+    if (start_idx < linress_n) {
+        while (i < linress_n) {
+            fn(self->linress + i, data);
+        }
+        i = 0;
+        while (i < linress_i) {
+            fn(self->linress + i, data);
+        }
+    }
+}
+
 void search_buf(const char *buf, const size_t buf_len,
                 const char *dir_full_path, results_t *results) {
     int binary = -1; /* 1 = yes, 0 = no, -1 = don't know */
@@ -241,11 +262,40 @@ multiline_done:
     }
 }
 
+static void print_context_line(const char *s, size_t line_number) {
+}
+
+static void print_linres_as_matched_line(linres_t *self, size_t line_number) {
+}
+
+/* This function assumes that *self has opts.before linres_t-s before it,
+ * and opts.after after.
+ * */
+static void print_linres_with_context(linres_t *self, void *data) {
+    size_t *line_number = (size_t*) data;
+    size_t line_no = *line_number;
+    linres_t *x;
+    size_t ofs;
+    if (self->matches_len) {
+        for (ofs = -opts.before; ofs < 0; ofs++) {
+            x = self + ofs;
+            print_context_line(x->line, line_no + ofs);
+        }
+        print_linres_as_matched_line(self, line_no);
+        for (ofs = 0; ofs < opts.after; ofs++) {
+            x = self + ofs;
+            print_context_line(x->line, line_no + ofs);
+        }
+    }
+    *line_number = line_no + 1;
+}
+
 static void print_results(results_t *self) {
     linres_t self_all = self->all;
 
     if (self->linress_n) {
-        /* TODO */
+        size_t line_number = self->line_number - opts.after;
+        for_linres_in_results(self, opts.before, print_linres_with_context, &line_number);
     } else if (self_all.matches_len > 0) {
         if (self->binary == -1 && !opts.print_filename_only) {
             self->binary = is_binary((const void *)self_all.buf, self_all.buf_len);
@@ -299,10 +349,10 @@ void search_stream(FILE *stream, const char *path) {
 
     input_alloc = 500;
     input = malloc(input_alloc);
-    init_results(&results, path, opts.before + opts.after + 1);
 
     if (opts.multiline) {
         /* Read all input, search it, print all matches */
+        init_results(&results, path, 0);
 
         for (i = 1; (line_len = getline(&line, &line_cap, stream)) > 0; i++) {
             if (input_alloc <= input_len + line_len) {
@@ -325,8 +375,12 @@ void search_stream(FILE *stream, const char *path) {
          * If this was the last line of an earlier context, print as much as possible
          * of the following match (which could be on this line, or an earlier one).
          * */
+        init_results(&results, path, opts.before + opts.after + 1);
+
         for (i = 1; (line_len = getline(&line, &line_cap, stream)) > 0; i++) {
             search_buf(line, line_len, path, &results);
+            push_line_from_buf_in_linress(&results);
+            results.line_number = i;
             print_results(&results);
         }
     }
