@@ -92,6 +92,15 @@ static void for_linres_in_results(results_t *self, size_t start_idx,
     }
 }
 
+void advance_linress_ring_in_results(results_t *self) {
+    size_t linress_i = self->linress_i;
+    if (linress_i + 1 >= self->linress_n) {
+        self->linress_i = 0;
+    } else {
+        self->linress_i = linress_i + 1;
+    }
+}
+
 void search_buf(const char *buf, const size_t buf_len,
                 const char *dir_full_path, results_t *results) {
     int binary = -1; /* 1 = yes, 0 = no, -1 = don't know */
@@ -112,7 +121,19 @@ void search_buf(const char *buf, const size_t buf_len,
     size_t matches_size;
     size_t matches_spare;
 
-    if (opts.invert_match) {
+    size_t linress_n = results->linress_n;
+    size_t linress_i = results->linress_i;
+    linres_t *lri = linress_n ? results->linress + linress_i : NULL;
+
+    if (lri) {
+        /* Searching stdin.
+         * Matches should not go into results->all.matches,
+         * but into results->linress[..].matches.
+         * */
+        matches_size = lri->matches_size;
+        matches = lri->matches;
+        matches_spare = 0;
+    } else if (opts.invert_match) {
         /* If we are going to invert the set of matches at the end, we will need
          * one extra match struct, even if there are no matches at all. So make
          * sure we have a nonempty array; and make sure we always have spare
@@ -128,7 +149,7 @@ void search_buf(const char *buf, const size_t buf_len,
     }
 
     if (!opts.literal && opts.query_len == 1 && opts.query[0] == '.') {
-        matches_size = 1;
+        matches_size = 1; /* Shouldn't harm elements of results->linress */
         matches = matches == NULL ? ag_malloc(matches_size * sizeof(match_t)) : matches;
         matches[0].start = 0;
         matches[0].end = buf_len;
@@ -239,16 +260,22 @@ void search_buf(const char *buf, const size_t buf_len,
 
 multiline_done:
 
-    if (opts.invert_match) {
+    if (lri) {
+        lri->matches = matches;
+        lri->matches_len = matches_len;
+        lri->matches_size = matches_size;
+    } else if (opts.invert_match) {
         matches_len = invert_matches(buf, buf_len, matches, matches_len);
     }
 
-    results->binary = binary;
-    results->all.buf = buf;
-    results->all.buf_len = buf_len;
-    results->all.matches = matches;
-    results->all.matches_len = matches_len;
-    results->all.matches_size = matches_size;
+    if (lri == NULL) {
+        results->binary = binary;
+        results->all.buf = buf;
+        results->all.buf_len = buf_len;
+        results->all.matches = matches;
+        results->all.matches_len = matches_len;
+        results->all.matches_size = matches_size;
+    }
 
     if (opts.stats) {
         pthread_mutex_lock(&stats_mtx);
@@ -379,9 +406,9 @@ void search_stream(FILE *stream, const char *path) {
 
         for (i = 1; (line_len = getline(&line, &line_cap, stream)) > 0; i++) {
             search_buf(line, line_len, path, &results);
-            push_line_from_buf_in_linress(&results);
             results.line_number = i;
             print_results(&results);
+            advance_linress_ring_in_results(&results);
         }
     }
 

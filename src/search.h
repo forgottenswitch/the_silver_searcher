@@ -90,7 +90,6 @@ typedef struct {
     linres_t all;
 
     /* Used for stdin search.
-     * Converted from .all by push_line_from_buf_in_results.
      * See also for_linres_in_results.
      * */
     linres_t *linress;
