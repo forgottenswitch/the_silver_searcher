@@ -64,15 +64,37 @@ typedef struct {
 } symdir_t;
 
 typedef struct {
-    int binary;
-    char *dir_full_path;
-
-    const char *buf;
-    size_t buf_len;
+    union {
+        struct {
+            const char *buf;
+            size_t buf_len;
+            const size_t _buf_size; /* Has to be 0 for line_size */
+        };
+        struct {
+            char *line;
+            size_t line_len;
+            size_t line_size;
+        };
+    };
 
     match_t *matches;
     size_t matches_len;
     size_t matches_size;
+} linres_t;
+
+typedef struct {
+    int binary; /* 0 when searching stdin */
+    char *dir_full_path; /* NULL when searching stdin */
+
+    /* Used for file searches.
+     * */
+    linres_t all;
+
+    /* Used for stdin search.
+     * */
+    linres_t *linress;
+    size_t linress_n;
+    size_t linress_i;
 } results_t;
 
 symdir_t *symhash;

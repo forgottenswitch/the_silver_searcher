@@ -1,23 +1,74 @@
 #include "search.h"
 #include "scandir.h"
 
-static void init_results(results_t *self, const char *dir_full_path) {
+#include <stdlib.h>
+#include <string.h>
+
+static void init_linres(linres_t *self) {
+    memset(self, 0, sizeof(linres_t));
+    self->matches_size = 8;
+    self->matches_len = 0;
+    self->matches = calloc(self->matches_size, sizeof(match_t));
+}
+
+static void fini_linres(linres_t *self) {
+    if (self->line_size) {
+        free(self->line);
+    }
+    free(self->matches);
+}
+
+static void set_linres(linres_t *self,
+        const char *line, size_t line_len,
+        match_t *matches, size_t matches_len) {
+    if (line) {
+        if (self->line_size <= line_len) {
+            while (self->line_size <= line_len) {
+                self->line_size *= 2;
+            }
+            self->line = realloc(self->line, self->line_size);
+            self->line_len = line_len;
+        }
+        memcpy(self->line, line, line_len);
+        self->line[line_len] = 0;
+    }
+    if (self->matches_size < matches_len) {
+        while (self->matches_size < matches_len) {
+            self->matches_size *= 2;
+        }
+        self->matches = realloc(self->matches, sizeof(match_t) * self->matches_size);
+        memcpy(self->matches, matches, sizeof(match_t) * matches_len);
+        self->matches_len = matches_len;
+    }
+}
+
+static void init_results(results_t *self, const char *dir_full_path,
+        size_t context_lines_n) {
+    size_t i;
     memset(self, 0, sizeof(results_t));
     if (dir_full_path) {
         self->dir_full_path = strdup(dir_full_path);
     }
+    if (context_lines_n) {
+        self->linress = calloc(context_lines_n+1, sizeof(linres_t));
+        self->linress_n = context_lines_n+1;
+        for (i = 0; i < self->linress_n; i++) {
+            init_linres(self->linress + i);
+        }
+    }
 }
 
 static void fini_results(results_t *self) {
+    size_t i;
     free(self->dir_full_path);
-    if (self->matches_size > 0) {
-        free(self->matches);
+    if (self->linress_n) {
+        for (i = 0; i < self->linress_n; i++) {
+            fini_linres(self->linress + i);
+        }
+        free(self->linress);
     }
+    fini_linres(&(self->all));
     memset(self, 0, sizeof(results_t));
-}
-
-static void clear_results(results_t *self) {
-    self->matches_len = 0;
 }
 
 void search_buf(const char *buf, const size_t buf_len,
@@ -34,10 +85,6 @@ void search_buf(const char *buf, const size_t buf_len,
             return;
         }
     }
-
-    results->buf = buf;
-    results->buf_len = buf_len;
-    results->binary = binary;
 
     size_t matches_len = 0;
     match_t *matches;
@@ -175,9 +222,12 @@ multiline_done:
         matches_len = invert_matches(buf, buf_len, matches, matches_len);
     }
 
-    results->matches = matches;
-    results->matches_len = matches_len;
-    results->matches_size = matches_size;
+    results->binary = binary;
+    results->all.buf = buf;
+    results->all.buf_len = buf_len;
+    results->all.matches = matches;
+    results->all.matches_len = matches_len;
+    results->all.matches_size = matches_size;
 
     if (opts.stats) {
         pthread_mutex_lock(&stats_mtx);
@@ -192,9 +242,13 @@ multiline_done:
 }
 
 static void print_results(results_t *self) {
-    if (self->matches_len > 0) {
+    linres_t self_all = self->all;
+
+    if (self->linress_n) {
+        /* TODO */
+    } else if (self_all.matches_len > 0) {
         if (self->binary == -1 && !opts.print_filename_only) {
-            self->binary = is_binary((const void *)self->buf, self->buf_len);
+            self->binary = is_binary((const void *)self_all.buf, self_all.buf_len);
         }
         pthread_mutex_lock(&print_mtx);
         if (opts.print_filename_only) {
@@ -205,10 +259,10 @@ static void print_results(results_t *self) {
              * on a file-without-matches which is not desired behaviour. See
              * GitHub issue 206 for the consequences if this behaviour is not
              * checked. */
-            if (!opts.invert_match || self->matches_len < 2) {
+            if (!opts.invert_match || self_all.matches_len < 2) {
                 if (opts.print_count) {
                     print_path_count(self->dir_full_path, opts.path_sep,
-                            (size_t)self->matches_len);
+                            (size_t)self_all.matches_len);
                 } else {
                     print_path(self->dir_full_path, opts.path_sep);
                 }
@@ -217,13 +271,13 @@ static void print_results(results_t *self) {
             print_binary_file_matches(self->dir_full_path);
         } else {
             print_file_matches(self->dir_full_path,
-                    self->buf, self->buf_len,
-                    self->matches, self->matches_len);
+                    self_all.buf, self_all.buf_len,
+                    self_all.matches, self_all.matches_len);
         }
         pthread_mutex_unlock(&print_mtx);
         opts.match_found = 1;
     } else if (opts.search_stream && opts.passthrough) {
-        fprintf(out_fd, "%s", self->buf);
+        fprintf(out_fd, "%s", self_all.buf);
     } else {
         log_debug("No match in %s", self->dir_full_path);
     }
@@ -245,7 +299,7 @@ void search_stream(FILE *stream, const char *path) {
 
     input_alloc = 500;
     input = malloc(input_alloc);
-    init_results(&results, path);
+    init_results(&results, path, opts.before + opts.after + 1);
 
     if (opts.multiline) {
         /* Read all input, search it, print all matches */
@@ -267,14 +321,13 @@ void search_stream(FILE *stream, const char *path) {
         print_results(&results);
     } else {
         /* Read a line, see if it matched.
-         * Print the line either as contenxt of an earlier match, or a new match.
+         * Print the line either as context of an earlier match, or a new match.
          * If this was the last line of an earlier context, print as much as possible
          * of the following match (which could be on this line, or an earlier one).
          * */
         for (i = 1; (line_len = getline(&line, &line_cap, stream)) > 0; i++) {
             search_buf(line, line_len, path, &results);
             print_results(&results);
-            clear_results(&results);
         }
     }
 
@@ -375,7 +428,7 @@ void search_file(const char *file_full_path) {
     }
 #endif
 
-    init_results(&results, file_full_path);
+    init_results(&results, file_full_path, 0);
 
     if (opts.search_zip_files) {
         ag_compression_type zip_type = is_zipped(buf, f_len);
