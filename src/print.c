@@ -65,7 +65,7 @@ void print_binary_file_matches(const char *path) {
     fprintf(out_fd, "Binary file %s matches.\n", path);
 }
 
-void print_file_matches(const char *path, const char *buf, const size_t buf_len, const match_t matches[], const size_t matches_len) {
+void print_file_matches(const char *path, const char *buf, const size_t buf_len, const match_t matches[], const size_t matches_len, int passthrough) {
     size_t line = 1;
     char **context_prev_lines = NULL;
     size_t prev_line = 0;
@@ -102,7 +102,8 @@ void print_file_matches(const char *path, const char *buf, const size_t buf_len,
 
     context_prev_lines = ag_calloc(sizeof(char *), (opts.before + 1));
 
-    for (i = 0; i <= buf_len && (cur_match < matches_len || lines_since_last_match <= opts.after); i++) {
+    for (i = 0;
+            i <= buf_len && (cur_match < matches_len || lines_since_last_match <= opts.after || passthrough); i++) {
         if (cur_match < matches_len && i == matches[cur_match].start) {
             in_a_match = TRUE;
             /* We found the start of a match */
@@ -253,6 +254,15 @@ void print_file_matches(const char *path, const char *buf, const size_t buf_len,
                     fputc(buf[j], out_fd);
                 }
                 fputc('\n', out_fd);
+            }
+
+            if (passthrough && lines_since_last_match > opts.after) {
+                /* if not the last newline */
+                if (i < buf_len && (i < buf_len-1 || (buf[buf_len-2] != '\r'))) {
+                    /* print --passthrough line */
+                    fprintf(out_fd, "%.*s\n",
+                            (int) (i - prev_line_offset), buf + prev_line_offset);
+                }
             }
 
             prev_line_offset = i + 1; /* skip the newline */

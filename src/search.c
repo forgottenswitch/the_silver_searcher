@@ -304,7 +304,7 @@ multiline_done:
     }
 }
 
-static void print_results(results_t *self) {
+static void print_results(results_t *self, int passthrough) {
     if (self->matches_len > 0) {
         if (self->binary == -1 && !opts.print_filename_only) {
             self->binary = is_binary((const void *)self->buf, self->buf_len);
@@ -331,7 +331,8 @@ static void print_results(results_t *self) {
         } else {
             print_file_matches(self->dir_full_path,
                     self->buf, self->buf_len,
-                    self->matches, self->matches_len);
+                    self->matches, self->matches_len,
+                    passthrough);
         }
         pthread_mutex_unlock(&print_mtx);
         opts.match_found = 1;
@@ -380,7 +381,7 @@ void search_stream(FILE *stream, const char *path) {
         if (results.matches_len > 0) {
             opts.match_found = TRUE;
         }
-        print_results(&results);
+        print_results(&results, opts.passthrough);
     } else {
         /* Read a line, see if it matched.
          *
@@ -557,14 +558,14 @@ void search_file(const char *file_full_path) {
                 goto cleanup;
             }
             search_buf(_buf, _buf_len, file_full_path, &results);
-            print_results(&results);
+            print_results(&results, 0);
             free(_buf);
             goto cleanup;
         }
     }
 
     search_buf(buf, f_len, file_full_path, &results);
-    print_results(&results);
+    print_results(&results, 0);
 
 cleanup:
 
