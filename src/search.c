@@ -73,21 +73,17 @@ static void fini_results(results_t *self) {
 
 typedef void linres_t_func(linres_t *x, void *data);
 
-/* This function iterates from oldest to newest in the results_t->linress ring.
- * The data arg is passed to fn.
+/* This function returns nth (by age) element in results_t->linress ring.
  * */
-static void for_linres_in_results(results_t *self, size_t start_idx,
-        linres_t_func *fn, void *data) {
+static linres_t* ith_linress_in_results(results_t *self, size_t i) {
     size_t linress_n = self->linress_n;
     size_t linress_i = self->linress_i;
-    size_t i = linress_i + start_idx;
-    if (start_idx < linress_n) {
-        while (i < linress_n) {
-            fn(self->linress + i, data);
-        }
-        i = 0;
-        while (i < linress_i) {
-            fn(self->linress + i, data);
+    size_t tail = linress_n - linress_i;
+    if (i < linress_n) {
+        if (i < tail) {
+            return self->linress + linress_i + i;
+        } else {
+            return self->linress + (i - tail);
         }
     }
 }
@@ -295,34 +291,27 @@ static void print_context_line(const char *s, size_t line_number) {
 static void print_linres_as_matched_line(linres_t *self, size_t line_number) {
 }
 
-/* This function assumes that *self has opts.before linres_t-s before it,
- * and opts.after after.
- * */
-static void print_linres_with_context(linres_t *self, void *data) {
-    size_t *line_number = (size_t*) data;
-    size_t line_no = *line_number;
-    linres_t *x;
-    size_t ofs;
-    if (self->matches_len) {
-        for (ofs = -opts.before; ofs < 0; ofs++) {
-            x = self + ofs;
-            print_context_line(x->line, line_no + ofs);
-        }
-        print_linres_as_matched_line(self, line_no);
-        for (ofs = 0; ofs < opts.after; ofs++) {
-            x = self + ofs;
-            print_context_line(x->line, line_no + ofs);
-        }
-    }
-    *line_number = line_no + 1;
-}
-
 static void print_results(results_t *self) {
     linres_t self_all = self->all;
 
     if (self->linress_n) {
         size_t line_number = self->line_number - opts.after;
-        for_linres_in_results(self, opts.before, print_linres_with_context, &line_number);
+        linres_t *matched_lr, *x;
+        size_t xi, ofs;
+        matched_lr = ith_linress_in_results(self, opts.before);
+        if (matched_lr->matches_len) {
+            for (ofs = -opts.before; ofs < 0; ofs++) {
+                xi = opts.before + ofs;
+                x = ith_linress_in_results(self, xi);
+                print_context_line(x->line, line_number + ofs);
+            }
+            print_linres_as_matched_line(matched_lr, line_number);
+            for (ofs = 0; ofs < opts.after; ofs++) {
+                xi = opts.before + 1 + ofs;
+                x = ith_linress_in_results(self, xi);
+                print_context_line(x->line, line_number + ofs);
+            }
+        }
     } else if (self_all.matches_len > 0) {
         if (self->binary == -1 && !opts.print_filename_only) {
             self->binary = is_binary((const void *)self_all.buf, self_all.buf_len);
@@ -398,9 +387,12 @@ void search_stream(FILE *stream, const char *path) {
         print_results(&results);
     } else {
         /* Read a line, see if it matched.
+         *
          * Print the line either as context of an earlier match, or a new match.
          * If this was the last line of an earlier context, print as much as possible
          * of the following match (which could be on this line, or an earlier one).
+         *
+         * Currently just prints the line in the middle (e.g. opts.after-th previous one).
          * */
         init_results(&results, path, opts.before + opts.after + 1);
 
