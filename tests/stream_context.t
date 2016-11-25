@@ -42,7 +42,7 @@ Setup:
   $ echo "the_silver_searcher.spec.in" >> test.txt
   $ echo "w" >> test.txt
 
-Search for lines matching "t" in piped test.txt:
+Search for lines matching "t" in piped test.txt (-C2):
 
   $ cat test.txt | "$TESTDIR/../ag" -C2 t --number
   3-ag
@@ -82,3 +82,83 @@ Search for lines matching "t" in piped test.txt:
   39:the_silver_searcher.spec
   40:the_silver_searcher.spec.in
   41-w
+
+Search for lines matching "t" in piped test.txt (-A1 -B2):
+
+  $ cat test.txt | "$TESTDIR/../ag" -A1 -B2 t --number
+  3-ag
+  4-ag.bashcomp.sh
+  5:autom4te.cache
+  6-build.sh
+  --
+  8-config.guess
+  9-config.log
+  10:config.status
+  11-config.sub
+  12-configure
+  13-configure.ac
+  14:CONTRIBUTING.md
+  15-depcomp
+  16-_.diff
+  17-doc
+  18:format.sh
+  19-fzfd.sh
+  20:install-sh
+  21-LICENSE
+  --
+  26-Makefile.w32
+  27-missing
+  28:NOTICE
+  29-README.md
+  30:results
+  31-src
+  32:test
+  33:test_G
+  34:test_gitign
+  35:test_perl
+  36:tests
+  37:test_trail_spc
+  38:_the_silver_searcher
+  39:the_silver_searcher.spec
+  40:the_silver_searcher.spec.in
+  41-w
+
+Search for lines matching "t" in piped test.txt (-A2 -B1):
+
+  $ cat test.txt | "$TESTDIR/../ag" -A2 -B1 t --number
+  4-ag.bashcomp.sh
+  5:autom4te.cache
+  6-build.sh
+  7-compile
+  --
+  9-config.log
+  10:config.status
+  11-config.sub
+  12-configure
+  13-configure.ac
+  14:CONTRIBUTING.md
+  15-depcomp
+  16-_.diff
+  17-doc
+  18:format.sh
+  19-fzfd.sh
+  20:install-sh
+  21-LICENSE
+  22-m4
+  --
+  27-missing
+  28:NOTICE
+  29-README.md
+  30:results
+  31-src
+  32:test
+  33:test_G
+  34:test_gitign
+  35:test_perl
+  36:tests
+  37:test_trail_spc
+  38:_the_silver_searcher
+  39:the_silver_searcher.spec
+  40:the_silver_searcher.spec.in
+  41-w
+
