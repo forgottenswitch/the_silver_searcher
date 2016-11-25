@@ -317,7 +317,9 @@ const char *normalize_path(const char *path) {
 
 void print_context_line(const char *s, size_t line_number) {
     char sep = '-';
-    print_line_number(line_number, sep);
+    if (opts.print_line_numbers) {
+        print_line_number(line_number, sep);
+    }
     fprintf(out_fd, "%s\n", s);
 }
 
@@ -325,7 +327,9 @@ void print_results_as_matched_line(results_t *self, size_t line_number, line_t *
     char sep = ':';
     size_t lastpos = 0;
     size_t i;
-    print_line_number(line_number, sep);
+    if (opts.print_line_numbers) {
+        print_line_number(line_number, sep);
+    }
     for (i = 0; i < self->matches_len; i++) {
         match_t match = self->matches[i];
         fprintf(out_fd, "%.*s%s%.*s%s",

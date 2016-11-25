@@ -377,6 +377,9 @@ void search_stream(FILE *stream, const char *path) {
         }
 
         search_buf(input, input_len, path, &results);
+        if (results.matches_len > 0) {
+            opts.match_found = TRUE;
+        }
         print_results(&results);
     } else {
         /* Read a line, see if it matched.
@@ -439,6 +442,8 @@ void search_stream(FILE *stream, const char *path) {
                 print_context_line(this_line->s, i);
                 lines_to_print--;
                 lines_to_last_print = 0;
+            } else if (opts.passthrough) {
+                print_context_line(this_line->s, i);
             }
         }
     }

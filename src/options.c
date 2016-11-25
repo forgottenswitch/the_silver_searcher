@@ -748,6 +748,9 @@ void parse_options(int argc, char **argv, char **base_paths[], char **paths[]) {
     if (opts.search_stream) {
         opts.print_break = 0;
         opts.print_path = PATH_PRINT_NOTHING;
+        if (opts.print_line_numbers != 2) {
+          opts.print_line_numbers = 0;
+        }
         if (opts.multiline_specified == 0) {
             /* Default stdin searches to --no-multiline to avoid waiting for EOF */
             opts.multiline = 0;
