@@ -418,12 +418,11 @@ void search_stream(FILE *stream, const char *path) {
                     /* Print preceding lines */
                     size_t before = opts.before;
                     size_t y;
-                            fprintf(out_fd, "=-- %d\n", (int)lines_to_last_print);
                     if (lines_to_last_print <= before) {
                         before = lines_to_last_print;
                     } else {
                         if (opts.match_found && print_context) {
-                            fprintf(out_fd, "-- %d\n", (int)lines_to_last_print);
+                            fprintf(out_fd, "--\n");
                         }
                     }
                     for (y = opts.before - before; y < opts.before; y++) {
