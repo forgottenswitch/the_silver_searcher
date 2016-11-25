@@ -429,11 +429,12 @@ void search_stream(FILE *stream, const char *path) {
             //print_linress_ring_in_results(&results);
 
             linres_t *this_linres = ith_linress_in_results(&results, results.linress_l-1);
-            if (this_linres->matches_len > 0) {
+            int any_matches = this_linres->matches_len > 0;
+            if ((!opts.invert_match && any_matches) || (opts.invert_match && !any_matches)) {
                 if (lines_to_print == 0) {
                     for (j = 0; j < (ssize_t)opts.before; j++) {
                         linres_t *ctx_linres = ith_linress_in_results(&results, j);
-                        if (ctx_linres) {
+                        if (ctx_linres && i > opts.before) {
                             print_context_line(ctx_linres->line, i-opts.before+j);
                         }
                     }
