@@ -3,7 +3,7 @@
 
 #include "util.h"
 
-struct _linres_t;
+struct _line_t;
 struct _results_t;
 
 void print_path(const char *path, const char sep);
@@ -18,7 +18,7 @@ void print_file_separator(void);
 const char *normalize_path(const char *path);
 
 void print_context_line(const char *s, size_t line_number);
-void print_results_as_matched_line(struct _results_t *self, size_t line_number, struct _linres_t *linres);
+void print_results_as_matched_line(struct _results_t *self, size_t line_number, struct _line_t *line);
 
 #ifdef _WIN32
 void windows_use_ansi(int use_ansi);

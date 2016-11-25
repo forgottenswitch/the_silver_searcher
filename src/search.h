@@ -63,11 +63,11 @@ typedef struct {
     UT_hash_handle hh;
 } symdir_t;
 
-typedef struct _linres_t {
-    char *line;
-    size_t line_len;
-    size_t line_size;
-} linres_t;
+typedef struct _line_t {
+    char *s;
+    size_t len;
+    size_t size;
+} line_t;
 
 typedef struct _results_t {
     int binary; /* 0 when searching stdin */
@@ -83,13 +83,13 @@ typedef struct _results_t {
     size_t buf_len;
 
     /* Used for stdin search.
-     * See also inc_linress_ring_len.
+     * See also inc_lines_ring_len.
      * */
-    linres_t *linress;
-    size_t linress_n; /* capacity */
-    size_t linress_i; /* index of the oldest elt */
-    size_t linress_l; /* number of elements */
-    int linress_filled; /* was ever filled? */
+    line_t *lines;
+    size_t lines_n; /* capacity */
+    size_t lines_i; /* index of the oldest elt */
+    size_t lines_l; /* number of elements */
+    int lines_filled; /* was ever filled? */
 } results_t;
 
 symdir_t *symhash;

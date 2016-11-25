@@ -4,35 +4,35 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void init_linres(linres_t *self) {
-    memset(self, 0, sizeof(linres_t));
+static void init_line(line_t *self) {
+    memset(self, 0, sizeof(line_t));
 }
 
-static void init_linres_line(linres_t *self) {
-    self->line_size = 400;
-    self->line = malloc(self->line_size);
-    self->line[0] = 0;
-    self->line_len = 0;
+static void init_line_line(line_t *self) {
+    self->size = 400;
+    self->s = malloc(self->size);
+    self->s[0] = 0;
+    self->len = 0;
 }
 
-static void fini_linres(linres_t *self) {
-    if (self->line_size) {
-        free(self->line);
+static void fini_line(line_t *self) {
+    if (self->size) {
+        free(self->s);
     }
 }
 
-static void set_linres_line(linres_t *self,
+static void set_line(line_t *self,
         const char *line, size_t line_len) {
     if (line) {
-        if (self->line_size <= line_len) {
-            while (self->line_size <= line_len) {
-                self->line_size *= 2;
+        if (self->size <= line_len) {
+            while (self->size <= line_len) {
+                self->size *= 2;
             }
-            self->line = realloc(self->line, self->line_size);
-            self->line_len = line_len;
+            self->s = realloc(self->s, self->size);
+            self->len = line_len;
         }
-        memcpy(self->line, line, line_len);
-        self->line[line_len] = 0;
+        memcpy(self->s, line, line_len);
+        self->s[line_len] = 0;
     }
 }
 
@@ -47,12 +47,12 @@ static void init_results(results_t *self, const char *dir_full_path,
     self->matches_len = 0;
     self->matches = calloc(self->matches_size, sizeof(match_t));
     if (context_lines_n) {
-        self->linress = calloc(context_lines_n, sizeof(linres_t));
-        self->linress_n = context_lines_n;
-        self->linress_i = 0;
-        for (i = 0; i < self->linress_n; i++) {
-            init_linres(self->linress + i);
-            init_linres_line(self->linress + i);
+        self->lines = calloc(context_lines_n, sizeof(line_t));
+        self->lines_n = context_lines_n;
+        self->lines_i = 0;
+        for (i = 0; i < self->lines_n; i++) {
+            init_line(self->lines + i);
+            init_line_line(self->lines + i);
         }
     }
 }
@@ -61,69 +61,69 @@ static void fini_results(results_t *self) {
     size_t i;
     free(self->dir_full_path);
     free(self->matches);
-    if (self->linress_l) {
-        for (i = 0; i < self->linress_l; i++) {
-            fini_linres(self->linress + i);
+    if (self->lines_l) {
+        for (i = 0; i < self->lines_l; i++) {
+            fini_line(self->lines + i);
         }
-        free(self->linress);
+        free(self->lines);
     }
     memset(self, 0, sizeof(results_t));
 }
 
-typedef void linres_t_func(linres_t *x, void *data);
+typedef void line_t_func(line_t *x, void *data);
 
-/* This function returns nth (by age) element in results_t->linress ring.
+/* This function returns nth (by age) element in results_t->lines ring.
  * */
-static linres_t* ith_linress_in_results(results_t *self, size_t i) {
-    size_t linress_n = self->linress_n;
-    size_t linress_i = self->linress_i;
-    size_t tail = linress_n - linress_i;
-    if (i < self->linress_l) {
+static line_t* ith_line_in_results(results_t *self, size_t i) {
+    size_t lines_n = self->lines_n;
+    size_t lines_i = self->lines_i;
+    size_t tail = lines_n - lines_i;
+    if (i < self->lines_l) {
         if (i < tail) {
-            return self->linress + linress_i + i;
+            return self->lines + lines_i + i;
         } else {
-            return self->linress + (i - tail);
+            return self->lines + (i - tail);
         }
     }
     return NULL;
 }
 
-static void inc_linress_ring_len(results_t *self) {
-    int filled = self->linress_filled;
-    size_t linress_i = self->linress_i;
-    if (self->linress_l < self->linress_n) {
+static void inc_lines_ring_len(results_t *self) {
+    int filled = self->lines_filled;
+    size_t lines_i = self->lines_i;
+    if (self->lines_l < self->lines_n) {
         /* No need to rotate unfilled ring */
-        self->linress_l++;
+        self->lines_l++;
         return;
     } else if (filled == 0) {
         /* Special case */
-        self->linress_filled = TRUE;
+        self->lines_filled = TRUE;
     }
     /* Rotate the ring */
-    if (linress_i + 1 >= self->linress_n) {
-        self->linress_i = 0;
+    if (lines_i + 1 >= self->lines_n) {
+        self->lines_i = 0;
     } else {
-        self->linress_i = linress_i + 1;
+        self->lines_i = lines_i + 1;
     }
 }
 
-static linres_t* insert_linres_for_results(results_t *self) {
+static line_t* insert_line_for_results(results_t *self) {
     size_t real_i;
-    if (self->linress_l < self->linress_n) {
-        real_i = self->linress_l;
+    if (self->lines_l < self->lines_n) {
+        real_i = self->lines_l;
     } else {
-        real_i = self->linress_i;
+        real_i = self->lines_i;
     }
-    return self->linress + real_i;
+    return self->lines + real_i;
 }
 
-static void print_linress_ring_in_results(results_t *self) {
-    size_t l = self->linress_l;
+static void print_lines_ring_in_results(results_t *self) {
+    size_t l = self->lines_l;
     size_t i;
-    fprintf(out_fd, "linress: n=%d i=%d l=%d\n",
-            (int)self->linress_n, (int)self->linress_i, (int)self->linress_l);
+    fprintf(out_fd, "lines: n=%d i=%d l=%d\n",
+            (int)self->lines_n, (int)self->lines_i, (int)self->lines_l);
     for (i = 0; i < l; i++) {
-        fprintf(out_fd, " [%d]'%s'", (int)i, self->linress[i].line);
+        fprintf(out_fd, " [%d]'%s'", (int)i, self->lines[i].s);
     }
     fprintf(out_fd, "\n");
 }
@@ -148,8 +148,8 @@ void search_buf(const char *buf, const size_t buf_len,
     size_t matches_size;
     size_t matches_spare;
 
-    size_t linress_n = results->linress_n;
-    linres_t *lri = linress_n ? insert_linres_for_results(results) : NULL;
+    size_t lines_n = results->lines_n;
+    line_t *lri = lines_n ? insert_line_for_results(results) : NULL;
 
     if (lri) {
         /* Searching stdin.
@@ -173,7 +173,7 @@ void search_buf(const char *buf, const size_t buf_len,
     }
 
     if (!opts.literal && opts.query_len == 1 && opts.query[0] == '.') {
-        matches_size = 1; /* Shouldn't harm elements of results->linress */
+        matches_size = 1; /* Shouldn't harm elements of results->lines */
         matches = matches == NULL ? ag_malloc(matches_size * sizeof(match_t)) : matches;
         matches[0].start = 0;
         matches[0].end = buf_len;
@@ -285,8 +285,8 @@ void search_buf(const char *buf, const size_t buf_len,
 multiline_done:
 
     if (lri) {
-        set_linres_line(lri, buf, buf_len);
-        inc_linress_ring_len(results);
+        set_line(lri, buf, buf_len);
+        inc_lines_ring_len(results);
         results->matches = matches;
         results->matches_len = matches_len;
         results->matches_size = matches_size;
@@ -409,23 +409,23 @@ void search_stream(FILE *stream, const char *path) {
             //fprintf(out_fd, "> '%s'\n", line);
             search_buf(line, line_len, path, &results);
             results.line_number = i;
-            //print_linress_ring_in_results(&results);
+            //print_lines_ring_in_results(&results);
 
-            linres_t *this_linres = ith_linress_in_results(&results, results.linress_l-1);
+            line_t *this_line = ith_line_in_results(&results, results.lines_l-1);
             int any_matches = results.matches_len > 0;
             if ((!opts.invert_match && any_matches) || (opts.invert_match && !any_matches)) {
                 if (lines_to_print == 0) {
                     for (j = 0; j < (ssize_t)opts.before; j++) {
-                        linres_t *ctx_linres = ith_linress_in_results(&results, j);
-                        if (ctx_linres && i > opts.before) {
-                            print_context_line(ctx_linres->line, i-opts.before+j);
+                        line_t *ctx_line = ith_line_in_results(&results, j);
+                        if (ctx_line && i > opts.before) {
+                            print_context_line(ctx_line->s, i-opts.before+j);
                         }
                     }
                 }
-                print_results_as_matched_line(&results, i, this_linres);
+                print_results_as_matched_line(&results, i, this_line);
                 lines_to_print = opts.after;
             } else if (lines_to_print) {
-                print_context_line(this_linres->line, i);
+                print_context_line(this_line->s, i);
                 lines_to_print--;
                 if (lines_to_print == 0) {
                     fprintf(out_fd, "--\n");
