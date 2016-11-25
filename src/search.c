@@ -4,18 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void print_context_line(const char *s, size_t line_number) {
-    char sep = (opts.ackmate || opts.vimgrep) ? ':' : '-';
-    print_line_number(line_number, sep);
-    fprintf(out_fd, "%s\n", s);
-}
-
-static void print_linres_as_matched_line(linres_t *self, size_t line_number) {
-    char sep = (opts.ackmate || opts.vimgrep) ? '+' : '+';
-    print_line_number(line_number, sep);
-    fprintf(out_fd, "%s\n", self->line);
-}
-
 static void init_linres(linres_t *self) {
     memset(self, 0, sizeof(linres_t));
     self->matches_size = 8;

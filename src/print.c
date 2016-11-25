@@ -8,6 +8,7 @@
 #include "log.h"
 #include "options.h"
 #include "print.h"
+#include "search.h"
 #include "util.h"
 #ifdef _WIN32
 #define fprintf(...) fprintf_w32(__VA_ARGS__)
@@ -312,4 +313,28 @@ const char *normalize_path(const char *path) {
         return path + 1;
     }
     return path;
+}
+
+void print_context_line(const char *s, size_t line_number) {
+    char sep = (opts.ackmate || opts.vimgrep) ? ':' : '-';
+    print_line_number(line_number, sep);
+    fprintf(out_fd, "%s\n", s);
+}
+
+void print_linres_as_matched_line(linres_t *self, size_t line_number) {
+    char sep = (opts.ackmate || opts.vimgrep) ? '+' : '+';
+    size_t lastpos = 0;
+    size_t i;
+    print_line_number(line_number, sep);
+    for (i = 0; i < self->matches_len; i++) {
+        match_t match = self->matches[i];
+        fprintf(out_fd, "|%d,%d:%s:%.*s,%s,%.*s,%s|",
+                (int)match.start, (int)match.end, self->line,
+                (int)(match.start-lastpos), self->line + lastpos,
+                (opts.color ? opts.color_match : ""),
+                (int)(match.end-match.start), self->line + match.start,
+                (opts.color ? color_reset : ""));
+        lastpos = match.end;
+    }
+    fprintf(out_fd, "%s\n", self->line + lastpos);
 }

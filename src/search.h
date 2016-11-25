@@ -63,7 +63,7 @@ typedef struct {
     UT_hash_handle hh;
 } symdir_t;
 
-typedef struct {
+typedef struct _linres_t {
     union {
         struct {
             const char *buf;

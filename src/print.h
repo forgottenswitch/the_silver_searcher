@@ -14,6 +14,10 @@ void print_column_number(const match_t matches[], size_t last_printed_match,
 void print_file_separator(void);
 const char *normalize_path(const char *path);
 
+void print_context_line(const char *s, size_t line_number);
+struct _linres_t;
+void print_linres_as_matched_line(struct _linres_t *self, size_t line_number);
+
 #ifdef _WIN32
 void windows_use_ansi(int use_ansi);
 int fprintf_w32(FILE *fp, const char *format, ...);
