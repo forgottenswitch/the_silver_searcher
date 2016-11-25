@@ -463,6 +463,8 @@ void search_file(const char *file_full_path) {
     FILE *fp = NULL;
     results_t results;
 
+    init_results(&results, file_full_path, 0);
+
     fd = open(file_full_path, O_RDONLY);
     if (fd < 0) {
         /* XXXX: strerror is not thread-safe */
@@ -545,8 +547,6 @@ void search_file(const char *file_full_path) {
         }
     }
 #endif
-
-    init_results(&results, file_full_path, 0);
 
     if (opts.search_zip_files) {
         ag_compression_type zip_type = is_zipped(buf, f_len);
