@@ -22,7 +22,7 @@ static void fini_line(line_t *self) {
 }
 
 static void set_line(line_t *self,
-        const char *line, size_t line_len) {
+                     const char *line, size_t line_len) {
     if (line) {
         if (self->size <= line_len) {
             while (self->size <= line_len) {
@@ -37,7 +37,7 @@ static void set_line(line_t *self,
 }
 
 static void init_results(results_t *self, const char *dir_full_path,
-        size_t context_lines_n) {
+                         size_t context_lines_n) {
     size_t i;
     memset(self, 0, sizeof(results_t));
     if (dir_full_path) {
@@ -74,7 +74,7 @@ typedef void line_t_func(line_t *x, void *data);
 
 /* This function returns nth (by age) element in results_t->lines ring.
  * */
-static line_t* ith_line_in_results(results_t *self, size_t i) {
+static line_t *ith_line_in_results(results_t *self, size_t i) {
     size_t lines_n = self->lines_n;
     size_t lines_i = self->lines_i;
     size_t tail = lines_n - lines_i;
@@ -107,7 +107,7 @@ static void inc_lines_ring_len(results_t *self) {
     }
 }
 
-static line_t* insert_line_for_results(results_t *self) {
+static line_t *insert_line_for_results(results_t *self) {
     size_t real_i;
     if (self->lines_l < self->lines_n) {
         real_i = self->lines_l;
@@ -321,7 +321,7 @@ static void print_results(results_t *self, int passthrough) {
             if (!opts.invert_match || self->matches_len < 2) {
                 if (opts.print_count) {
                     print_path_count(self->dir_full_path, opts.path_sep,
-                            (size_t)self->matches_len);
+                                     (size_t)self->matches_len);
                 } else {
                     print_path(self->dir_full_path, opts.path_sep);
                 }
@@ -330,9 +330,9 @@ static void print_results(results_t *self, int passthrough) {
             print_binary_file_matches(self->dir_full_path);
         } else {
             print_file_matches(self->dir_full_path,
-                    self->buf, self->buf_len,
-                    self->matches, self->matches_len,
-                    passthrough);
+                               self->buf, self->buf_len,
+                               self->matches, self->matches_len,
+                               passthrough);
         }
         pthread_mutex_unlock(&print_mtx);
         opts.match_found = 1;
@@ -371,7 +371,7 @@ void search_stream(FILE *stream, const char *path) {
                 input = realloc(input, input_alloc);
             }
 
-            char * const input1 = input + input_len;
+            char *const input1 = input + input_len;
             for (j = 0; j <= line_len; j++)
                 input1[j] = line[j];
             input_len += line_len;
@@ -395,18 +395,18 @@ void search_stream(FILE *stream, const char *path) {
         size_t lines_to_last_print = 0;
         const int print_context = opts.before || opts.after;
 
-        init_results(&results, path, opts.before+1);
+        init_results(&results, path, opts.before + 1);
 
         for (i = 1; (line_len = getline(&line, &line_cap, stream)) > 0; i++) {
             lines_to_last_print++;
-            if (line[line_len-1] == '\n') {
+            if (line[line_len - 1] == '\n') {
                 /* Chop the trailing newline */
-                line[line_len-1] = 0;
+                line[line_len - 1] = 0;
             }
             search_buf(line, line_len, path, &results);
             results.line_number = i;
 
-            line_t *this_line = ith_line_in_results(&results, results.lines_l-1);
+            line_t *this_line = ith_line_in_results(&results, results.lines_l - 1);
             int any_matches = results.matches_len > 0;
             if (opts.print_count) {
                 fprintf(out_fd, "%d\n", (int)results.matches_len);
@@ -420,7 +420,7 @@ void search_stream(FILE *stream, const char *path) {
                     size_t n_prec_lines = opts.before;
                     size_t y;
                     if (lines_to_last_print <= n_prec_lines) {
-                        n_prec_lines = lines_to_last_print-1;
+                        n_prec_lines = lines_to_last_print - 1;
                     } else if (lines_to_last_print > n_prec_lines + opts.after) {
                         if (opts.match_found && print_context) {
                             fprintf(out_fd, "--\n");
@@ -429,7 +429,7 @@ void search_stream(FILE *stream, const char *path) {
                     for (y = opts.before - n_prec_lines; y < opts.before; y++) {
                         line_t *ctx_line = ith_line_in_results(&results, y);
                         if (ctx_line && i > opts.before) {
-                            print_context_line(ctx_line->s, i-opts.before+y);
+                            print_context_line(ctx_line->s, i - opts.before + y);
                         }
                     }
                 }

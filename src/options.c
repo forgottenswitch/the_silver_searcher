@@ -557,7 +557,7 @@ void parse_options(int argc, char **argv, char **base_paths[], char **paths[]) {
                     opts.multiline = TRUE;
                     break;
                 } else if (strcmp(longopts[opt_index].name, "no-multiline") == 0 ||
-                              strcmp(longopts[opt_index].name, "nomultiline") == 0) {
+                           strcmp(longopts[opt_index].name, "nomultiline") == 0) {
                     opts.multiline_specified = TRUE;
                     opts.multiline = 0;
                     break;
@@ -749,7 +749,7 @@ void parse_options(int argc, char **argv, char **base_paths[], char **paths[]) {
         opts.print_break = 0;
         opts.print_path = PATH_PRINT_NOTHING;
         if (opts.print_line_numbers != 2) {
-          opts.print_line_numbers = 0;
+            opts.print_line_numbers = 0;
         }
         if (opts.multiline_specified == 0) {
             /* Default stdin searches to --no-multiline to avoid waiting for EOF */

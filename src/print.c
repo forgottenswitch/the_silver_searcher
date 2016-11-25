@@ -103,7 +103,7 @@ void print_file_matches(const char *path, const char *buf, const size_t buf_len,
     context_prev_lines = ag_calloc(sizeof(char *), (opts.before + 1));
 
     for (i = 0;
-            i <= buf_len && (cur_match < matches_len || lines_since_last_match <= opts.after || passthrough); i++) {
+         i <= buf_len && (cur_match < matches_len || lines_since_last_match <= opts.after || passthrough); i++) {
         if (cur_match < matches_len && i == matches[cur_match].start) {
             in_a_match = TRUE;
             /* We found the start of a match */
@@ -258,10 +258,10 @@ void print_file_matches(const char *path, const char *buf, const size_t buf_len,
 
             if (passthrough && lines_since_last_match > opts.after) {
                 /* if not the last newline */
-                if (i < buf_len && (i < buf_len-1 || (buf[buf_len-2] != '\r'))) {
+                if (i < buf_len && (i < buf_len - 1 || (buf[buf_len - 2] != '\r'))) {
                     /* print --passthrough line */
                     fprintf(out_fd, "%.*s\n",
-                            (int) (i - prev_line_offset), buf + prev_line_offset);
+                            (int)(i - prev_line_offset), buf + prev_line_offset);
                 }
             }
 
@@ -343,9 +343,9 @@ void print_results_as_matched_line(results_t *self, size_t line_number, line_t *
     for (i = 0; i < self->matches_len; i++) {
         match_t match = self->matches[i];
         fprintf(out_fd, "%.*s%s%.*s%s",
-                (int)(match.start-lastpos), line->s + lastpos,
+                (int)(match.start - lastpos), line->s + lastpos,
                 (opts.color ? opts.color_match : ""),
-                (int)(match.end-match.start), line->s + match.start,
+                (int)(match.end - match.start), line->s + match.start,
                 (opts.color ? color_reset : ""));
         lastpos = match.end;
     }

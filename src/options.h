@@ -75,7 +75,7 @@ typedef struct {
     int search_hidden_files;
     int search_stream; /* true if tail -F blah | ag */
     int stats;
-    int match_found;        /* This should totally not be in here */
+    int match_found; /* This should totally not be in here */
     ino_t stdout_inode;
     char *query;
     int query_len;

@@ -70,9 +70,9 @@ typedef struct _line_t {
 } line_t;
 
 typedef struct _results_t {
-    int binary; /* 0 when searching stdin */
+    int binary;          /* 0 when searching stdin */
     char *dir_full_path; /* NULL when searching stdin */
-    size_t line_number; /* for stdin */
+    size_t line_number;  /* for stdin */
 
     match_t *matches;
     size_t matches_len;
@@ -86,9 +86,9 @@ typedef struct _results_t {
      * See also inc_lines_ring_len.
      * */
     line_t *lines;
-    size_t lines_n; /* capacity */
-    size_t lines_i; /* index of the oldest elt */
-    size_t lines_l; /* number of elements */
+    size_t lines_n;   /* capacity */
+    size_t lines_i;   /* index of the oldest elt */
+    size_t lines_l;   /* number of elements */
     int lines_filled; /* was ever filled? */
 } results_t;
 
