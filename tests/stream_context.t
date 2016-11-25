@@ -44,7 +44,7 @@ Setup:
 
 Search for lines matching "t" in piped test.txt:
 
-  $ cat test.txt | ag -C2 t
+  $ cat test.txt | "$TESTDIR/../ag" -C2 t --number
   3-ag
   4-ag.bashcomp.sh
   5:autom4te.cache
