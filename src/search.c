@@ -104,13 +104,13 @@ static linres_t* ith_linress_in_results(results_t *self, size_t i) {
 static void inc_linress_ring_len(results_t *self) {
     int filled = self->linress_filled;
     size_t linress_i = self->linress_i;
-    /* No need to rotate un- or just- filled ring */
     if (self->linress_l < self->linress_n) {
+        /* No need to rotate unfilled ring */
         self->linress_l++;
         return;
     } else if (filled == 0) {
+        /* Special case */
         self->linress_filled = TRUE;
-        return;
     }
     /* Rotate the ring */
     if (linress_i + 1 >= self->linress_n) {
