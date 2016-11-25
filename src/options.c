@@ -146,6 +146,7 @@ void init_options(void) {
     opts.max_search_depth = DEFAULT_MAX_SEARCH_DEPTH;
     opts.mmap = TRUE;
     opts.multiline = TRUE;
+    opts.multiline_specified = 0;
     opts.width = 0;
     opts.path_sep = '\n';
     opts.print_break = TRUE;
@@ -259,7 +260,7 @@ void parse_options(int argc, char **argv, char **base_paths[], char **paths[]) {
         { "match", no_argument, &useless, 0 },
         { "max-count", required_argument, NULL, 'm' },
         { "mmap", no_argument, &opts.mmap, TRUE },
-        { "multiline", no_argument, &opts.multiline, TRUE },
+        { "multiline", no_argument, NULL, 0 },
         /* Accept both --no-* and --no* forms for convenience/BC */
         { "no-affinity", no_argument, &opts.use_thread_affinity, 0 },
         { "noaffinity", no_argument, &opts.use_thread_affinity, 0 },
@@ -276,9 +277,9 @@ void parse_options(int argc, char **argv, char **base_paths[], char **paths[]) {
         { "no-heading", no_argument, &opts.print_path, PATH_PRINT_EACH_LINE },
         { "noheading", no_argument, &opts.print_path, PATH_PRINT_EACH_LINE },
         { "no-mmap", no_argument, &opts.mmap, FALSE },
+        { "no-multiline", no_argument, NULL, 0 },
+        { "nomultiline", no_argument, NULL, 0 },
         { "nommap", no_argument, &opts.mmap, FALSE },
-        { "no-multiline", no_argument, &opts.multiline, FALSE },
-        { "nomultiline", no_argument, &opts.multiline, FALSE },
         { "no-numbers", no_argument, &opts.print_line_numbers, FALSE },
         { "nonumbers", no_argument, &opts.print_line_numbers, FALSE },
         { "no-pager", no_argument, NULL, 0 },
@@ -551,6 +552,15 @@ void parse_options(int argc, char **argv, char **base_paths[], char **paths[]) {
                     opts.print_path = PATH_PRINT_NOTHING;
                     opts.stats = 1;
                     break;
+                } else if (strcmp(longopts[opt_index].name, "multiline") == 0) {
+                    opts.multiline_specified = TRUE;
+                    opts.multiline = TRUE;
+                    break;
+                } else if (strcmp(longopts[opt_index].name, "no-multiline") == 0 ||
+                              strcmp(longopts[opt_index].name, "nomultiline") == 0) {
+                    opts.multiline_specified = TRUE;
+                    opts.multiline = 0;
+                    break;
                 }
 
                 /* Continue to usage if we don't recognize the option */
@@ -738,6 +748,10 @@ void parse_options(int argc, char **argv, char **base_paths[], char **paths[]) {
     if (opts.search_stream) {
         opts.print_break = 0;
         opts.print_path = PATH_PRINT_NOTHING;
+        if (opts.multiline_specified == 0) {
+            /* Default stdin searches to --no-multiline to avoid waiting for EOF */
+            opts.multiline = 0;
+        }
     }
 
     if (accepts_query && argc > 0) {

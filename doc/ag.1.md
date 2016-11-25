@@ -112,7 +112,7 @@ Recursively search for PATTERN in PATH. Like grep or ack, but faster.
     Toggle use of memory-mapped I/O. Defaults to true.
 
   * `--[no]multiline`:
-    Match regexes across newlines. Enabled by default.
+    Match regexes across newlines. Enabled by default unless searching stdin.
 
   * `-n --norecurse`:
     Don't recurse into directories.
