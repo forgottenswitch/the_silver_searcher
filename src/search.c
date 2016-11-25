@@ -392,13 +392,14 @@ void search_stream(FILE *stream, const char *path) {
     } else {
         /* Read a line, see if it matched.
          *
-         * Print the line either as context of an earlier match, or a new match.
-         * If this was the last line of an earlier context, print as much as possible
-         * of the following match (which could be on this line, or an earlier one).
-         *
-         * Currently just prints the line in the middle (e.g. opts.after-th previous one).
+         * If yes and not printing an earlier context, print opts.before preceding lines
+         * (excluding those already printed).
+         * If matched, print the line.
+         * At least for the following opts.after lines, keep printing the lines.
+         * Then if neither of the opts.before following lines matches, print a '--'.
          * */
         int lines_to_print = 0;
+
         init_results(&results, path, opts.before+1);
 
         for (i = 1; (line_len = getline(&line, &line_cap, stream)) > 0; i++) {
