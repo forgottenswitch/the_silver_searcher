@@ -316,20 +316,19 @@ const char *normalize_path(const char *path) {
 }
 
 void print_context_line(const char *s, size_t line_number) {
-    char sep = (opts.ackmate || opts.vimgrep) ? ':' : '-';
+    char sep = '-';
     print_line_number(line_number, sep);
     fprintf(out_fd, "%s\n", s);
 }
 
 void print_results_as_matched_line(results_t *self, size_t line_number, line_t *line) {
-    char sep = (opts.ackmate || opts.vimgrep) ? '+' : '+';
+    char sep = ':';
     size_t lastpos = 0;
     size_t i;
     print_line_number(line_number, sep);
     for (i = 0; i < self->matches_len; i++) {
         match_t match = self->matches[i];
-        fprintf(out_fd, "|%d,%d:%s:%.*s,%s,%.*s,%s|",
-                (int)match.start, (int)match.end, line->s,
+        fprintf(out_fd, "%.*s%s%.*s%s",
                 (int)(match.start-lastpos), line->s + lastpos,
                 (opts.color ? opts.color_match : ""),
                 (int)(match.end-match.start), line->s + match.start,

@@ -117,17 +117,6 @@ static line_t* insert_line_for_results(results_t *self) {
     return self->lines + real_i;
 }
 
-static void print_lines_ring_in_results(results_t *self) {
-    size_t l = self->lines_l;
-    size_t i;
-    fprintf(out_fd, "lines: n=%d i=%d l=%d\n",
-            (int)self->lines_n, (int)self->lines_i, (int)self->lines_l);
-    for (i = 0; i < l; i++) {
-        fprintf(out_fd, " [%d]'%s'", (int)i, self->lines[i].s);
-    }
-    fprintf(out_fd, "\n");
-}
-
 void search_buf(const char *buf, const size_t buf_len,
                 const char *dir_full_path, results_t *results) {
     int binary = -1; /* 1 = yes, 0 = no, -1 = don't know */
@@ -411,10 +400,8 @@ void search_stream(FILE *stream, const char *path) {
                 /* Chop the trailing newline */
                 line[line_len-1] = 0;
             }
-            //fprintf(out_fd, "> '%s'\n", line);
             search_buf(line, line_len, path, &results);
             results.line_number = i;
-            //print_lines_ring_in_results(&results);
 
             line_t *this_line = ith_line_in_results(&results, results.lines_l-1);
             int any_matches = results.matches_len > 0;
@@ -431,7 +418,6 @@ void search_stream(FILE *stream, const char *path) {
                             fprintf(out_fd, "--\n");
                         }
                     }
-                    //fprintf(out_fd, "yy %d %d\n", (int)n_prec_lines, (int)lines_to_last_print);
                     for (y = opts.before - n_prec_lines; y < opts.before; y++) {
                         line_t *ctx_line = ith_line_in_results(&results, y);
                         if (ctx_line && i > opts.before) {
