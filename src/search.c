@@ -389,7 +389,6 @@ void search_stream(FILE *stream, const char *path) {
          * */
         size_t lines_to_print = 0;
         size_t lines_to_last_print = 0;
-        int ever_matched = 0;
         const int print_context = opts.before || opts.after;
 
         init_results(&results, path, opts.before+1);
@@ -405,7 +404,12 @@ void search_stream(FILE *stream, const char *path) {
 
             line_t *this_line = ith_line_in_results(&results, results.lines_l-1);
             int any_matches = results.matches_len > 0;
-            if ((!opts.invert_match && any_matches) || (opts.invert_match && !any_matches)) {
+            if (opts.print_count) {
+                fprintf(out_fd, "%d\n", (int)results.matches_len);
+                if (any_matches) {
+                    opts.match_found = TRUE;
+                }
+            } else if ((!opts.invert_match && any_matches) || (opts.invert_match && !any_matches)) {
                 /* This line matches */
                 if (lines_to_print == 0) {
                     /* Print preceding lines */
@@ -414,7 +418,7 @@ void search_stream(FILE *stream, const char *path) {
                     if (lines_to_last_print <= n_prec_lines) {
                         n_prec_lines = lines_to_last_print-1;
                     } else if (lines_to_last_print > n_prec_lines + opts.after) {
-                        if (ever_matched && print_context) {
+                        if (opts.match_found && print_context) {
                             fprintf(out_fd, "--\n");
                         }
                     }
@@ -425,7 +429,7 @@ void search_stream(FILE *stream, const char *path) {
                         }
                     }
                 }
-                ever_matched = TRUE;
+                opts.match_found = TRUE;
                 print_results_as_matched_line(&results, i, this_line);
                 lines_to_last_print = 0;
                 /* Keep printing */
