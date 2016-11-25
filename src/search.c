@@ -48,8 +48,9 @@ static void init_results(results_t *self, const char *dir_full_path,
         self->dir_full_path = strdup(dir_full_path);
     }
     if (context_lines_n) {
-        self->linress = calloc(context_lines_n+1, sizeof(linres_t));
-        self->linress_n = context_lines_n+1;
+        self->linress = calloc(context_lines_n, sizeof(linres_t));
+        self->linress_n = context_lines_n;
+        self->linress_i = 0;
         for (i = 0; i < self->linress_n; i++) {
             init_linres(self->linress + i);
             init_linres_line(self->linress + i);
@@ -88,13 +89,18 @@ static linres_t* ith_linress_in_results(results_t *self, size_t i) {
     return NULL;
 }
 
-static void advance_linress_ring_in_results(results_t *self) {
+static void inc_linress_ring_len(results_t *self) {
+    int filled = self->linress_filled;
     size_t linress_i = self->linress_i;
+    /* No need to rotate un- or just- filled ring */
     if (self->linress_l < self->linress_n) {
-        /* No need to rotate unfilled ring. */
         self->linress_l++;
         return;
+    } else if (filled == 0) {
+        self->linress_filled = TRUE;
+        return;
     }
+    /* Rotate the ring */
     if (linress_i + 1 >= self->linress_n) {
         self->linress_i = 0;
     } else {
@@ -283,6 +289,7 @@ multiline_done:
 
     if (lri) {
         set_linres_line(lri, buf, buf_len);
+        inc_linress_ring_len(results);
         lri->matches = matches;
         lri->matches_len = matches_len;
         lri->matches_size = matches_size;
@@ -440,7 +447,6 @@ void search_stream(FILE *stream, const char *path) {
             results.line_number = i;
             print_linress_ring_in_results(&results);
             print_results(&results);
-            advance_linress_ring_in_results(&results);
         }
     }
 

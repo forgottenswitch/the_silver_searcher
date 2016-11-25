@@ -90,12 +90,13 @@ typedef struct {
     linres_t all;
 
     /* Used for stdin search.
-     * See also for_linres_in_results.
+     * See also inc_linress_ring_len.
      * */
     linres_t *linress;
     size_t linress_n; /* capacity */
     size_t linress_i; /* index of the oldest elt */
-    size_t linress_l; /* filliness */
+    size_t linress_l; /* number of elements */
+    int linress_filled; /* was ever filled? */
 } results_t;
 
 symdir_t *symhash;
