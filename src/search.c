@@ -4,6 +4,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+static void print_context_line(const char *s, size_t line_number) {
+    char sep = (opts.ackmate || opts.vimgrep) ? ':' : '-';
+    print_line_number(line_number, sep);
+    fprintf(out_fd, "%s\n", s);
+}
+
+static void print_linres_as_matched_line(linres_t *self, size_t line_number) {
+    char sep = (opts.ackmate || opts.vimgrep) ? '+' : '+';
+    print_line_number(line_number, sep);
+    fprintf(out_fd, "%s\n", self->line);
+}
+
 static void init_linres(linres_t *self) {
     memset(self, 0, sizeof(linres_t));
     self->matches_size = 8;
@@ -318,42 +330,10 @@ multiline_done:
     }
 }
 
-static void print_context_line(const char *s, size_t line_number) {
-    char sep = (opts.ackmate || opts.vimgrep) ? ':' : '-';
-    print_line_number(line_number, sep);
-    fprintf(out_fd, "%s\n", s);
-}
-
-static void print_linres_as_matched_line(linres_t *self, size_t line_number) {
-    char sep = (opts.ackmate || opts.vimgrep) ? ':' : '-';
-    print_line_number(line_number, sep);
-    fprintf(out_fd, "%s\n", self->line);
-}
-
 static void print_results(results_t *self) {
     linres_t self_all = self->all;
 
-    if (self->linress_n) {
-        size_t line_number = self->line_number - opts.after;
-        linres_t *matched_lr, *x;
-        size_t xi;
-        ssize_t ofs;
-        matched_lr = ith_linress_in_results(self, opts.before);
-        if (matched_lr && matched_lr->matches_len) {
-            for (ofs = -opts.before; ofs < 0; ofs++) {
-                xi = opts.before + ofs;
-                x = ith_linress_in_results(self, xi);
-                print_context_line(x->line, line_number + ofs);
-            }
-            print_linres_as_matched_line(matched_lr, line_number);
-            for (ofs = 1; ofs <= (ssize_t)opts.after; ofs++) {
-                xi = opts.before + ofs;
-                x = ith_linress_in_results(self, xi);
-                print_context_line(x->line, line_number + ofs);
-            }
-            fprintf(out_fd, "--\n");
-        }
-    } else if (self_all.matches_len > 0) {
+    if (self_all.matches_len > 0) {
         if (self->binary == -1 && !opts.print_filename_only) {
             self->binary = is_binary((const void *)self_all.buf, self_all.buf_len);
         }
@@ -435,18 +415,38 @@ void search_stream(FILE *stream, const char *path) {
          *
          * Currently just prints the line in the middle (e.g. opts.after-th previous one).
          * */
-        init_results(&results, path, opts.before + opts.after + 1);
+        int lines_to_print = 0;
+        init_results(&results, path, opts.before+1);
 
         for (i = 1; (line_len = getline(&line, &line_cap, stream)) > 0; i++) {
             if (line[line_len-1] == '\n') {
                 /* Chop the trailing newline */
                 line[line_len-1] = 0;
             }
-            fprintf(out_fd, "> '%s'\n", line);
+            //fprintf(out_fd, "> '%s'\n", line);
             search_buf(line, line_len, path, &results);
             results.line_number = i;
-            print_linress_ring_in_results(&results);
-            print_results(&results);
+            //print_linress_ring_in_results(&results);
+
+            linres_t *this_linres = ith_linress_in_results(&results, results.linress_l-1);
+            if (this_linres->matches_len > 0) {
+                if (lines_to_print == 0) {
+                    for (j = 0; j < (ssize_t)opts.before; j++) {
+                        linres_t *ctx_linres = ith_linress_in_results(&results, j);
+                        if (ctx_linres) {
+                            print_context_line(ctx_linres->line, i-opts.before+j);
+                        }
+                    }
+                }
+                print_linres_as_matched_line(this_linres, i);
+                lines_to_print = opts.after;
+            } else if (lines_to_print) {
+                print_context_line(this_linres->line, i);
+                lines_to_print--;
+                if (lines_to_print == 0) {
+                    fprintf(out_fd, "--\n");
+                }
+            }
         }
     }
 
