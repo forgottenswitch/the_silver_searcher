@@ -11,6 +11,13 @@ static void init_linres(linres_t *self) {
     self->matches = calloc(self->matches_size, sizeof(match_t));
 }
 
+static void init_linres_line(linres_t *self) {
+    self->line_size = 400;
+    self->line = malloc(self->line_size);
+    self->line[0] = 0;
+    self->line_len = 0;
+}
+
 static void fini_linres(linres_t *self) {
     if (self->line_size) {
         free(self->line);
@@ -18,9 +25,8 @@ static void fini_linres(linres_t *self) {
     free(self->matches);
 }
 
-static void set_linres(linres_t *self,
-        const char *line, size_t line_len,
-        match_t *matches, size_t matches_len) {
+static void set_linres_line(linres_t *self,
+        const char *line, size_t line_len) {
     if (line) {
         if (self->line_size <= line_len) {
             while (self->line_size <= line_len) {
@@ -31,14 +37,6 @@ static void set_linres(linres_t *self,
         }
         memcpy(self->line, line, line_len);
         self->line[line_len] = 0;
-    }
-    if (self->matches_size < matches_len) {
-        while (self->matches_size < matches_len) {
-            self->matches_size *= 2;
-        }
-        self->matches = realloc(self->matches, sizeof(match_t) * self->matches_size);
-        memcpy(self->matches, matches, sizeof(match_t) * matches_len);
-        self->matches_len = matches_len;
     }
 }
 
@@ -54,6 +52,7 @@ static void init_results(results_t *self, const char *dir_full_path,
         self->linress_n = context_lines_n+1;
         for (i = 0; i < self->linress_n; i++) {
             init_linres(self->linress + i);
+            init_linres_line(self->linress + i);
         }
     }
 }
@@ -257,6 +256,7 @@ void search_buf(const char *buf, const size_t buf_len,
 multiline_done:
 
     if (lri) {
+        set_linres_line(lri, buf, buf_len);
         lri->matches = matches;
         lri->matches_len = matches_len;
         lri->matches_size = matches_size;
