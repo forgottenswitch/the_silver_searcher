@@ -76,16 +76,16 @@ typedef struct _linres_t {
             size_t line_size;
         };
     };
+} linres_t;
+
+typedef struct _results_t {
+    int binary; /* 0 when searching stdin */
+    char *dir_full_path; /* NULL when searching stdin */
+    size_t line_number; /* for stdin */
 
     match_t *matches;
     size_t matches_len;
     size_t matches_size;
-} linres_t;
-
-typedef struct {
-    int binary; /* 0 when searching stdin */
-    char *dir_full_path; /* NULL when searching stdin */
-    size_t line_number; /* for stdin */
 
     linres_t all;
 

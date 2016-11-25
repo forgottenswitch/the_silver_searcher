@@ -321,7 +321,7 @@ void print_context_line(const char *s, size_t line_number) {
     fprintf(out_fd, "%s\n", s);
 }
 
-void print_linres_as_matched_line(linres_t *self, size_t line_number) {
+void print_results_as_matched_line(results_t *self, size_t line_number, linres_t *lr) {
     char sep = (opts.ackmate || opts.vimgrep) ? '+' : '+';
     size_t lastpos = 0;
     size_t i;
@@ -329,12 +329,12 @@ void print_linres_as_matched_line(linres_t *self, size_t line_number) {
     for (i = 0; i < self->matches_len; i++) {
         match_t match = self->matches[i];
         fprintf(out_fd, "|%d,%d:%s:%.*s,%s,%.*s,%s|",
-                (int)match.start, (int)match.end, self->line,
-                (int)(match.start-lastpos), self->line + lastpos,
+                (int)match.start, (int)match.end, lr->line,
+                (int)(match.start-lastpos), lr->line + lastpos,
                 (opts.color ? opts.color_match : ""),
-                (int)(match.end-match.start), self->line + match.start,
+                (int)(match.end-match.start), lr->line + match.start,
                 (opts.color ? color_reset : ""));
         lastpos = match.end;
     }
-    fprintf(out_fd, "%s\n", self->line + lastpos);
+    fprintf(out_fd, "%s\n", lr->line + lastpos);
 }

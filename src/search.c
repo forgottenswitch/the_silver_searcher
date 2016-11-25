@@ -6,9 +6,6 @@
 
 static void init_linres(linres_t *self) {
     memset(self, 0, sizeof(linres_t));
-    self->matches_size = 8;
-    self->matches_len = 0;
-    self->matches = calloc(self->matches_size, sizeof(match_t));
 }
 
 static void init_linres_line(linres_t *self) {
@@ -22,7 +19,6 @@ static void fini_linres(linres_t *self) {
     if (self->line_size) {
         free(self->line);
     }
-    free(self->matches);
 }
 
 static void set_linres_line(linres_t *self,
@@ -47,6 +43,9 @@ static void init_results(results_t *self, const char *dir_full_path,
     if (dir_full_path) {
         self->dir_full_path = strdup(dir_full_path);
     }
+    self->matches_size = 8;
+    self->matches_len = 0;
+    self->matches = calloc(self->matches_size, sizeof(match_t));
     if (context_lines_n) {
         self->linress = calloc(context_lines_n, sizeof(linres_t));
         self->linress_n = context_lines_n;
@@ -61,6 +60,7 @@ static void init_results(results_t *self, const char *dir_full_path,
 static void fini_results(results_t *self) {
     size_t i;
     free(self->dir_full_path);
+    free(self->matches);
     if (self->linress_l) {
         for (i = 0; i < self->linress_l; i++) {
             fini_linres(self->linress + i);
@@ -157,8 +157,8 @@ void search_buf(const char *buf, const size_t buf_len,
          * Matches should not go into results->all.matches,
          * but into results->linress[..].matches.
          * */
-        matches_size = lri->matches_size;
-        matches = lri->matches;
+        matches_size = results->matches_size;
+        matches = results->matches;
         matches_spare = 0;
     } else if (opts.invert_match) {
         /* If we are going to invert the set of matches at the end, we will need
@@ -290,9 +290,9 @@ multiline_done:
     if (lri) {
         set_linres_line(lri, buf, buf_len);
         inc_linress_ring_len(results);
-        lri->matches = matches;
-        lri->matches_len = matches_len;
-        lri->matches_size = matches_size;
+        results->matches = matches;
+        results->matches_len = matches_len;
+        results->matches_size = matches_size;
     } else if (opts.invert_match) {
         matches_len = invert_matches(buf, buf_len, matches, matches_len);
     }
@@ -301,9 +301,9 @@ multiline_done:
         results->binary = binary;
         results->all.buf = buf;
         results->all.buf_len = buf_len;
-        results->all.matches = matches;
-        results->all.matches_len = matches_len;
-        results->all.matches_size = matches_size;
+        results->matches = matches;
+        results->matches_len = matches_len;
+        results->matches_size = matches_size;
     }
 
     if (opts.stats) {
@@ -321,7 +321,7 @@ multiline_done:
 static void print_results(results_t *self) {
     linres_t self_all = self->all;
 
-    if (self_all.matches_len > 0) {
+    if (self->matches_len > 0) {
         if (self->binary == -1 && !opts.print_filename_only) {
             self->binary = is_binary((const void *)self_all.buf, self_all.buf_len);
         }
@@ -334,10 +334,10 @@ static void print_results(results_t *self) {
              * on a file-without-matches which is not desired behaviour. See
              * GitHub issue 206 for the consequences if this behaviour is not
              * checked. */
-            if (!opts.invert_match || self_all.matches_len < 2) {
+            if (!opts.invert_match || self->matches_len < 2) {
                 if (opts.print_count) {
                     print_path_count(self->dir_full_path, opts.path_sep,
-                            (size_t)self_all.matches_len);
+                            (size_t)self->matches_len);
                 } else {
                     print_path(self->dir_full_path, opts.path_sep);
                 }
@@ -347,7 +347,7 @@ static void print_results(results_t *self) {
         } else {
             print_file_matches(self->dir_full_path,
                     self_all.buf, self_all.buf_len,
-                    self_all.matches, self_all.matches_len);
+                    self->matches, self->matches_len);
         }
         pthread_mutex_unlock(&print_mtx);
         opts.match_found = 1;
@@ -417,7 +417,7 @@ void search_stream(FILE *stream, const char *path) {
             //print_linress_ring_in_results(&results);
 
             linres_t *this_linres = ith_linress_in_results(&results, results.linress_l-1);
-            int any_matches = this_linres->matches_len > 0;
+            int any_matches = results.matches_len > 0;
             if ((!opts.invert_match && any_matches) || (opts.invert_match && !any_matches)) {
                 if (lines_to_print == 0) {
                     for (j = 0; j < (ssize_t)opts.before; j++) {
@@ -427,7 +427,7 @@ void search_stream(FILE *stream, const char *path) {
                         }
                     }
                 }
-                print_linres_as_matched_line(this_linres, i);
+                print_results_as_matched_line(&results, i, this_linres);
                 lines_to_print = opts.after;
             } else if (lines_to_print) {
                 print_context_line(this_linres->line, i);
