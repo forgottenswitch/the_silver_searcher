@@ -93,8 +93,9 @@ typedef struct {
      * See also for_linres_in_results.
      * */
     linres_t *linress;
-    size_t linress_n;
-    size_t linress_i;
+    size_t linress_n; /* capacity */
+    size_t linress_i; /* index of the oldest elt */
+    size_t linress_l; /* filliness */
 } results_t;
 
 symdir_t *symhash;
