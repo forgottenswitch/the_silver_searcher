@@ -287,9 +287,15 @@ multiline_done:
 }
 
 static void print_context_line(const char *s, size_t line_number) {
+    char sep = (opts.ackmate || opts.vimgrep) ? ':' : '-';
+    print_line_number(line_number, sep);
+    fprintf(out_fd, "%s", s);
 }
 
 static void print_linres_as_matched_line(linres_t *self, size_t line_number) {
+    char sep = (opts.ackmate || opts.vimgrep) ? ':' : '-';
+    print_line_number(line_number, sep);
+    fprintf(out_fd, "%s", self->line);
 }
 
 static void print_results(results_t *self) {
@@ -308,11 +314,12 @@ static void print_results(results_t *self) {
                 print_context_line(x->line, line_number + ofs);
             }
             print_linres_as_matched_line(matched_lr, line_number);
-            for (ofs = 0; ofs < (ssize_t)opts.after; ofs++) {
-                xi = opts.before + 1 + ofs;
+            for (ofs = 1; ofs <= (ssize_t)opts.after; ofs++) {
+                xi = opts.before + ofs;
                 x = ith_linress_in_results(self, xi);
                 print_context_line(x->line, line_number + ofs);
             }
+            fprintf(out_fd, "--\n");
         }
     } else if (self_all.matches_len > 0) {
         if (self->binary == -1 && !opts.print_filename_only) {
