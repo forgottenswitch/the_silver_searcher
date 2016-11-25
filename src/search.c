@@ -85,9 +85,10 @@ static linres_t* ith_linress_in_results(results_t *self, size_t i) {
             return self->linress + (i - tail);
         }
     }
+    return NULL;
 }
 
-void advance_linress_ring_in_results(results_t *self) {
+static void advance_linress_ring_in_results(results_t *self) {
     size_t linress_i = self->linress_i;
     if (linress_i + 1 >= self->linress_n) {
         self->linress_i = 0;
@@ -297,7 +298,8 @@ static void print_results(results_t *self) {
     if (self->linress_n) {
         size_t line_number = self->line_number - opts.after;
         linres_t *matched_lr, *x;
-        size_t xi, ofs;
+        size_t xi;
+        ssize_t ofs;
         matched_lr = ith_linress_in_results(self, opts.before);
         if (matched_lr->matches_len) {
             for (ofs = -opts.before; ofs < 0; ofs++) {
@@ -306,7 +308,7 @@ static void print_results(results_t *self) {
                 print_context_line(x->line, line_number + ofs);
             }
             print_linres_as_matched_line(matched_lr, line_number);
-            for (ofs = 0; ofs < opts.after; ofs++) {
+            for (ofs = 0; ofs < (ssize_t)opts.after; ofs++) {
                 xi = opts.before + 1 + ofs;
                 x = ith_linress_in_results(self, xi);
                 print_context_line(x->line, line_number + ofs);
