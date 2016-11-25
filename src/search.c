@@ -67,7 +67,6 @@ static void fini_results(results_t *self) {
         }
         free(self->linress);
     }
-    fini_linres(&(self->all));
     memset(self, 0, sizeof(results_t));
 }
 
@@ -154,8 +153,6 @@ void search_buf(const char *buf, const size_t buf_len,
 
     if (lri) {
         /* Searching stdin.
-         * Matches should not go into results->all.matches,
-         * but into results->linress[..].matches.
          * */
         matches_size = results->matches_size;
         matches = results->matches;
@@ -299,8 +296,8 @@ multiline_done:
 
     if (lri == NULL) {
         results->binary = binary;
-        results->all.buf = buf;
-        results->all.buf_len = buf_len;
+        results->buf = buf;
+        results->buf_len = buf_len;
         results->matches = matches;
         results->matches_len = matches_len;
         results->matches_size = matches_size;
@@ -319,11 +316,9 @@ multiline_done:
 }
 
 static void print_results(results_t *self) {
-    linres_t self_all = self->all;
-
     if (self->matches_len > 0) {
         if (self->binary == -1 && !opts.print_filename_only) {
-            self->binary = is_binary((const void *)self_all.buf, self_all.buf_len);
+            self->binary = is_binary((const void *)self->buf, self->buf_len);
         }
         pthread_mutex_lock(&print_mtx);
         if (opts.print_filename_only) {
@@ -346,13 +341,13 @@ static void print_results(results_t *self) {
             print_binary_file_matches(self->dir_full_path);
         } else {
             print_file_matches(self->dir_full_path,
-                    self_all.buf, self_all.buf_len,
+                    self->buf, self->buf_len,
                     self->matches, self->matches_len);
         }
         pthread_mutex_unlock(&print_mtx);
         opts.match_found = 1;
     } else if (opts.search_stream && opts.passthrough) {
-        fprintf(out_fd, "%s", self_all.buf);
+        fprintf(out_fd, "%s", self->buf);
     } else {
         log_debug("No match in %s", self->dir_full_path);
     }

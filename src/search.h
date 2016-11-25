@@ -64,18 +64,9 @@ typedef struct {
 } symdir_t;
 
 typedef struct _linres_t {
-    union {
-        struct {
-            const char *buf;
-            size_t buf_len;
-            const size_t _buf_size; /* Has to be 0 for line_size */
-        };
-        struct {
-            char *line;
-            size_t line_len;
-            size_t line_size;
-        };
-    };
+    char *line;
+    size_t line_len;
+    size_t line_size;
 } linres_t;
 
 typedef struct _results_t {
@@ -87,7 +78,9 @@ typedef struct _results_t {
     size_t matches_len;
     size_t matches_size;
 
-    linres_t all;
+    /* Used for file searches */
+    const char *buf;
+    size_t buf_len;
 
     /* Used for stdin search.
      * See also inc_linress_ring_len.
