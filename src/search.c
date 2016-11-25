@@ -398,11 +398,15 @@ void search_stream(FILE *stream, const char *path) {
          * At least for the following opts.after lines, keep printing the lines.
          * Then if neither of the opts.before following lines matches, print a '--'.
          * */
-        int lines_to_print = 0;
+        size_t lines_to_print = 0;
+        size_t lines_to_last_print = 0;
+        int ever_matched = 0;
+        const int print_context = opts.before || opts.after;
 
         init_results(&results, path, opts.before+1);
 
         for (i = 1; (line_len = getline(&line, &line_cap, stream)) > 0; i++) {
+            lines_to_last_print++;
             if (line[line_len-1] == '\n') {
                 /* Chop the trailing newline */
                 line[line_len-1] = 0;
@@ -415,22 +419,36 @@ void search_stream(FILE *stream, const char *path) {
             line_t *this_line = ith_line_in_results(&results, results.lines_l-1);
             int any_matches = results.matches_len > 0;
             if ((!opts.invert_match && any_matches) || (opts.invert_match && !any_matches)) {
+                /* This line matches */
                 if (lines_to_print == 0) {
-                    for (j = 0; j < (ssize_t)opts.before; j++) {
-                        line_t *ctx_line = ith_line_in_results(&results, j);
+                    /* Print preceding lines */
+                    size_t n_prec_lines = opts.before;
+                    size_t y;
+                    if (lines_to_last_print <= n_prec_lines) {
+                        n_prec_lines = lines_to_last_print-1;
+                    } else if (lines_to_last_print > n_prec_lines + opts.after) {
+                        if (ever_matched && print_context) {
+                            fprintf(out_fd, "--\n");
+                        }
+                    }
+                    //fprintf(out_fd, "yy %d %d\n", (int)n_prec_lines, (int)lines_to_last_print);
+                    for (y = opts.before - n_prec_lines; y < opts.before; y++) {
+                        line_t *ctx_line = ith_line_in_results(&results, y);
                         if (ctx_line && i > opts.before) {
-                            print_context_line(ctx_line->s, i-opts.before+j);
+                            print_context_line(ctx_line->s, i-opts.before+y);
                         }
                     }
                 }
+                ever_matched = TRUE;
                 print_results_as_matched_line(&results, i, this_line);
+                lines_to_last_print = 0;
+                /* Keep printing */
                 lines_to_print = opts.after;
             } else if (lines_to_print) {
+                /* Keep printing */
                 print_context_line(this_line->s, i);
                 lines_to_print--;
-                if (lines_to_print == 0) {
-                    fprintf(out_fd, "--\n");
-                }
+                lines_to_last_print = 0;
             }
         }
     }
