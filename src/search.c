@@ -398,7 +398,6 @@ void search_stream(FILE *stream, const char *path) {
         init_results(&results, path, opts.before + 1);
 
         for (i = 1; (line_len = getline(&line, &line_cap, stream)) > 0; i++) {
-            lines_to_last_print++;
             if (line[line_len - 1] == '\n') {
                 /* Chop the trailing newline */
                 line[line_len - 1] = 0;
@@ -417,17 +416,17 @@ void search_stream(FILE *stream, const char *path) {
                 /* This line matches */
                 if (lines_to_print == 0) {
                     /* Print preceding lines */
-                    size_t n_prec_lines = opts.before;
+                    size_t before = opts.before;
                     size_t y;
                             fprintf(out_fd, "=-- %d\n", (int)lines_to_last_print);
-                    if (lines_to_last_print <= opts.before + 1) {
-                        n_prec_lines = lines_to_last_print - opts.after;
+                    if (lines_to_last_print <= before) {
+                        before = lines_to_last_print;
                     } else {
                         if (opts.match_found && print_context) {
                             fprintf(out_fd, "-- %d\n", (int)lines_to_last_print);
                         }
                     }
-                    for (y = opts.before - n_prec_lines; y < opts.before; y++) {
+                    for (y = opts.before - before; y < opts.before; y++) {
                         line_t *ctx_line = ith_line_in_results(&results, y);
                         if (ctx_line && i > opts.before) {
                             print_context_line(ctx_line->s, i - opts.before + y);
@@ -446,6 +445,8 @@ void search_stream(FILE *stream, const char *path) {
                 lines_to_last_print = 0;
             } else if (opts.passthrough) {
                 print_context_line(this_line->s, i);
+            } else {
+                lines_to_last_print++;
             }
         }
     }
