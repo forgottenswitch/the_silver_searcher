@@ -73,6 +73,8 @@ void search_file(const char *file_full_path);
 
 void *search_file_worker(void *i);
 
+void load_ignore_patterns_from_parent_dirs(ignores *ig, const char *base_path);
+
 void search_dir(ignores *ig, const char *base_path, const char *path, const int depth, dev_t original_dev);
 
 #endif
