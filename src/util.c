@@ -552,6 +552,94 @@ int is_named_pipe(const char *path, const struct dirent *d) {
     return S_ISFIFO(s.st_mode) || S_ISSOCK(s.st_mode);
 }
 
+
+int is_filesystem_root(const char *path) {
+#ifndef _WIN32
+    /* Accept one or more slashes. */
+    if (*path == 0) {
+        return 0;
+    }
+    while (*path == '/') {
+        path++;
+    }
+    return (*path == 0);
+#else
+    int is_unc = 0;
+    int is_dev = 0;
+    char *slash;
+
+    /* "Long" or "native" path ? */
+    if (strncmp(path, "\\\\?\\", 4) == 0 || strncmp(path, "\\??\\", 4) == 0) {
+        path += 4;
+    } else if (strncmp(path, "\\\\.\\", 4) == 0) { /* "device namespace" path? */
+        path += 4;
+        is_dev = 1;
+    } else if (strncmp(path, "\\\\", 2) == 0) {
+        path += 2;
+        is_unc = 1;
+    }
+
+    /* this shouldn't happen */
+    if (*path == '\\') {
+        return -1;
+    }
+
+    if (is_unc) {
+        /* skip server name */
+        slash = strchr(path, '\\');
+        if (slash == NULL) {
+            slash = strchr(path, '/');
+        }
+        /* accept any number of slashes */
+        if (slash == NULL) {
+            return 1;
+        }
+        while (*slash == '\\' || *slash == '/') {
+            slash++;
+        }
+        return (*slash == 0);
+    } else {
+        /* skip drive letter */
+        if (!is_dev) {
+            if ((*path >= 'A' && *path <= 'Z') || (*path >= 'a' && *path <= 'z')) {
+                path++;
+            } else {
+                return -1;
+            }
+            if (*path == ':') {
+                path++;
+            } else {
+                return -1;
+            }
+        }
+        /* accept any number of slashes */
+        if (*path == 0) {
+            return 1;
+        }
+        while (*path == '\\' && *path == '/') {
+            *path++;
+        }
+        return (*path == 0);
+    }
+#endif
+}
+
+char *end_of_dirname(const char *path) {
+#ifndef _WIN32
+    return strrchr(path, '/');
+#else
+    char *slash1, *slash2;
+
+    slash1 = strrchr(path, '/');
+    slash2 = strrchr(path, '\\');
+
+    if (slash1 == NULL || slash1 < slash2) {
+        return slash2;
+    }
+    return slash1;
+#endif
+}
+
 void ag_asprintf(char **ret, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);

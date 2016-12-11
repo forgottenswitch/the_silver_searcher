@@ -93,6 +93,9 @@ int is_directory(const char *path, const struct dirent *d);
 int is_symlink(const char *path, const struct dirent *d);
 int is_named_pipe(const char *path, const struct dirent *d);
 
+int is_filesystem_root(const char *path);
+char *end_of_dirname(const char *path);
+
 void die(const char *fmt, ...);
 
 void ag_asprintf(char **ret, const char *fmt, ...);
