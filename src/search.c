@@ -475,6 +475,39 @@ static int check_symloop_leave(dirkey_t *dirkey) {
 #endif
 }
 
+/* Find gitignore-like files to load ignore patterns from */
+static void find_and_load_ignore_files_nonrecursively(ignores *ig, const char *dir_full_path) {
+    const char *ignore_file = NULL;
+    char *ignore_filepath = NULL;
+    int i;
+
+    log_debug("Looking for ignore patterns in %s", dir_full_path);
+    for (i = 0; opts.skip_vcs_ignores ? (i <= 1) : (ignore_pattern_files[i] != NULL); i++) {
+        ignore_file = ignore_pattern_files[i];
+        ag_asprintf(&ignore_filepath, "%s/%s", dir_full_path, ignore_file);
+        load_ignore_patterns(ig, ignore_filepath);
+        free(ignore_filepath);
+    }
+}
+
+void load_ignore_patterns_from_parent_dirs(ignores *ig, const char *base_path) {
+    char *dir_real_path = NULL;
+    char *end;
+
+    dir_real_path = realpath(base_path, NULL);
+    if (dir_real_path == NULL) {
+        return;
+    }
+
+    while (!is_filesystem_root(dir_real_path) &&
+           (end = dirname_end(dir_real_path))) {
+        *end = 0;
+        find_and_load_ignore_files_nonrecursively(ig, dir_real_path);
+    }
+
+    free(dir_real_path);
+}
+
 /* TODO: Append matches to some data structure instead of just printing them out.
  * Then ag can have sweet summaries of matches/files scanned/time/etc.
  */
@@ -486,7 +519,6 @@ void search_dir(ignores *ig, const char *base_path, const char *path, const int 
     int results = 0;
 
     char *dir_full_path = NULL;
-    const char *ignore_file = NULL;
     int i;
 
     int symres;
@@ -498,14 +530,7 @@ void search_dir(ignores *ig, const char *base_path, const char *path, const int 
         return;
     }
 
-    /* find .*ignore files to load ignore patterns from */
-    for (i = 0; opts.skip_vcs_ignores ? (i <= 1) : (ignore_pattern_files[i] != NULL); i++) {
-        ignore_file = ignore_pattern_files[i];
-        ag_asprintf(&dir_full_path, "%s/%s", path, ignore_file);
-        load_ignore_patterns(ig, dir_full_path);
-        free(dir_full_path);
-        dir_full_path = NULL;
-    }
+    find_and_load_ignore_files_nonrecursively(ig, path);
 
     scandir_baton.ig = ig;
     scandir_baton.base_path = base_path;

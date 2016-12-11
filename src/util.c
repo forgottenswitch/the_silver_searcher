@@ -551,6 +551,31 @@ int is_named_pipe(const char *path, const struct dirent *d) {
     return S_ISFIFO(s.st_mode) || S_ISSOCK(s.st_mode);
 }
 
+char *dirname_end(char *path) {
+    char *slash;
+    slash = strrchr(path, '/');
+    if (!slash) {
+        return path;
+    }
+    while (slash[-1] == '/') {
+        slash--;
+    }
+    if (slash == path) {
+        slash++;
+    }
+    return slash;
+}
+
+int is_filesystem_root(const char *path) {
+    if (*path == 0) {
+        return 0;
+    }
+    while (*path == '/') {
+        path++;
+    }
+    return (*path == 0);
+}
+
 void ag_asprintf(char **ret, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
