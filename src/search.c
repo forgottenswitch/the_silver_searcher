@@ -500,6 +500,7 @@ void load_ignore_patterns_from_parent_dirs(ignores *ig, const char *base_path) {
     }
 
     while (!is_filesystem_root(dir_real_path) &&
+           !is_repository_root(dir_real_path) &&
            (end = dirname_end(dir_real_path))) {
         *end = 0;
         find_and_load_ignore_files_nonrecursively(ig, dir_real_path);

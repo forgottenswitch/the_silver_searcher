@@ -95,6 +95,7 @@ int is_named_pipe(const char *path, const struct dirent *d);
 
 char *dirname_end(char *path);
 int is_filesystem_root(const char *path);
+int is_repository_root(const char *path);
 
 void die(const char *fmt, ...);
 
