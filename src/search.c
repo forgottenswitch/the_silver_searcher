@@ -1,4 +1,5 @@
 #include "search.h"
+#include "iterpath.h"
 #include "print.h"
 #include "scandir.h"
 
@@ -478,12 +479,18 @@ static int check_symloop_leave(dirkey_t *dirkey) {
 static void load_ignore_patterns_from_dir(ignores *ig, const char *dir_full_path) {
     const char *ignore_file = NULL;
     char *ignore_filepath = NULL;
+    const char pathsep =
+#ifdef _WIN32
+        '\\';
+#else
+        '/';
+#endif
     int i;
 
     log_debug("Looking for ignore patterns in %s", dir_full_path);
     for (i = 0; opts.skip_vcs_ignores ? (i == 0) : (ignore_pattern_files[i] != NULL); i++) {
         ignore_file = ignore_pattern_files[i];
-        ag_asprintf(&ignore_filepath, "%s/%s", dir_full_path, ignore_file);
+        ag_asprintf(&ignore_filepath, "%s%c%s", dir_full_path, pathsep, ignore_file);
         load_ignore_patterns(ig, ignore_filepath);
         free(ignore_filepath);
     }
@@ -501,7 +508,7 @@ void load_ignore_patterns_from_parent_dirs(ignores *ig, const char *base_path) {
     while (!is_filesystem_root(dir_real_path) &&
            !is_repository_root(dir_real_path) &&
            (end = dirname_end(dir_real_path))) {
-        *end = 0;
+        *end = '\0';
         load_ignore_patterns_from_dir(ig, dir_real_path);
     }
 

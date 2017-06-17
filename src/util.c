@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 
 #include "config.h"
+#include "iterpath.h"
 #include "util.h"
 
 #ifdef _WIN32
@@ -526,31 +527,6 @@ int is_named_pipe(const char *path, const struct dirent *d) {
            || S_ISSOCK(s.st_mode)
 #endif
         ;
-}
-
-char *dirname_end(char *path) {
-    char *slash;
-    slash = strrchr(path, '/');
-    if (!slash) {
-        return path;
-    }
-    while (slash[-1] == '/') {
-        slash--;
-    }
-    if (slash == path) {
-        slash++;
-    }
-    return slash;
-}
-
-int is_filesystem_root(const char *path) {
-    if (*path == 0) {
-        return 0;
-    }
-    while (*path == '/') {
-        path++;
-    }
-    return (*path == 0);
 }
 
 int is_repository_root(const char *path) {

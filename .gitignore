@@ -21,6 +21,8 @@ configure
 depcomp
 gmon.out
 install-sh
+iterpath
+iterpath_win32
 Makefile
 Makefile.in
 missing
