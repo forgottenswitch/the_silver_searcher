@@ -5,7 +5,6 @@
 int main(int argc, char **argv) {
     char *path;
     char *dir_end;
-    char buf[1000];
 
     if (argc < 2) {
         return 1;
@@ -14,10 +13,9 @@ int main(int argc, char **argv) {
     path = argv[1];
 
     for (;;) {
-        snprintf(buf, sizeof buf, "%s/", path);
-        printf("%s\n", buf);
+        printf("%s\n", path);
 
-        if (is_filesystem_root(buf)) {
+        if (is_filesystem_root(path)) {
             printf("ROOT\n");
         }
 

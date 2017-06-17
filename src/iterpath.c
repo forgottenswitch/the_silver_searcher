@@ -1,7 +1,7 @@
 #include "iterpath.h"
 #include <string.h>
 
-/* Returns a pointer to beginning of the last, but not terminating,
+/* Returns a pointer to after the last, but not terminating,
  * slash row in a path, or NULL */
 char *dirname_end(char *path) {
 #ifndef PATHS_ARE_WIN32
@@ -12,58 +12,55 @@ char *dirname_end(char *path) {
         slash--;
     }
 
+    /* skip terminating slash group */
     while (slash > path && *slash == '/') {
         slash--;
     }
 
+    /* skip last name in the path */
     while (slash > path && *slash != '/') {
         slash--;
     }
 
-    if (slash == path) {
-        if (*path == '/') {
-            return path;
-        }
-        return NULL;
+    if (*slash == '/') {
+        return slash + 1;
     }
 
-    while (slash > path && slash[-1] == '/') {
-        slash--;
-    }
-
-    if (slash == path) {
-        slash++;
-    }
-
-    return slash;
+    return NULL;
 #else
     char *slash;
+
+    if (path[0] == '\\') {
+        /* "Long" or "native" path ? */
+        if (strncmp(path, "\\\\?\\", 4) == 0 || strncmp(path, "\\??\\", 4) == 0) {
+            path += 4;
+        } else if (strncmp(path, "\\\\.\\", 4) == 0) { /* "device namespace" path? */
+            path += 4;
+        } else if (strncmp(path, "\\\\", 2) == 0) {
+            path += 2;
+        }
+    }
 
     slash = path + strlen(path);
     if (slash > path) {
         slash--;
     }
 
+    /* skip terminating slash group */
     while (slash > path && (*slash == '\\' || *slash == '/')) {
         slash--;
     }
 
+    /* skip last name in the path */
     while (slash > path && !(*slash == '\\' || *slash == '/')) {
         slash--;
     }
 
-    if (slash == path) {
-        if (*path == '\\' || *path == '/') {
-            return path;
-        }
-        return NULL;
+    if (*slash == '/' || *slash == '\\') {
+        return slash + 1;
     }
 
-    while (slash > path && (slash[-1] == '\\' || slash[-1] == '/')) {
-        slash--;
-    }
-
-    return slash;
+    return NULL;
 #endif
 }
 
@@ -88,20 +85,22 @@ int is_filesystem_root(const char *path) {
     int is_unc = 0;
     int is_dev = 0;
 
-    /* "Long" or "native" path ? */
-    if (strncmp(path, "\\\\?\\", 4) == 0 || strncmp(path, "\\??\\", 4) == 0) {
-        path += 4;
-    } else if (strncmp(path, "\\\\.\\", 4) == 0) { /* "device namespace" path? */
-        path += 4;
-        is_dev = 1;
-    } else if (strncmp(path, "\\\\", 2) == 0) {
-        path += 2;
-        is_unc = 1;
+    if (path[0] == '\\') {
+        /* "Long" or "native" path ? */
+        if (strncmp(path, "\\\\?\\", 4) == 0 || strncmp(path, "\\??\\", 4) == 0) {
+            path += 4;
+        } else if (strncmp(path, "\\\\.\\", 4) == 0) { /* "device namespace" path? */
+            path += 4;
+            is_dev = 1;
+        } else if (strncmp(path, "\\\\", 2) == 0) {
+            path += 2;
+            is_unc = 1;
+        }
     }
 
     /* Unknown path type starting with a backslash */
     if (*path == '\\') {
-        return -1;
+        return 0;
     }
 
     if (is_unc) {
@@ -123,7 +122,7 @@ int is_filesystem_root(const char *path) {
                 (path[1] == ':')) {
                 path += 2;
             } else {
-                return -1;
+                return 0;
             }
         }
 
