@@ -17,13 +17,15 @@ char *dirname_end(char *path) {
         slash--;
     }
 
-    /* skip last name in the path */
-    while (slash > path && *slash != '/') {
-        slash--;
-    }
+    if (slash > path) {
+        /* skip last name in the path */
+        while (slash > path && *slash != '/') {
+            slash--;
+        }
 
-    if (*slash == '/') {
-        return slash + 1;
+        if (*slash == '/') {
+            return slash + 1;
+        }
     }
 
     return NULL;
@@ -51,14 +53,17 @@ char *dirname_end(char *path) {
         slash--;
     }
 
-    /* skip last name in the path */
-    while (slash > path && !(*slash == '\\' || *slash == '/')) {
-        slash--;
+    if (slash > path) {
+        /* skip last name in the path */
+        while (slash > path && !(*slash == '\\' || *slash == '/')) {
+            slash--;
+        }
+
+        if (*slash == '/' || *slash == '\\') {
+            return slash + 1;
+        }
     }
 
-    if (*slash == '/' || *slash == '\\') {
-        return slash + 1;
-    }
 
     return NULL;
 #endif
